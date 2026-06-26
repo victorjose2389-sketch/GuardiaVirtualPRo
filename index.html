@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1.0,user-scalable=no">
+<meta name="theme-color" content="#06120a">
+<title>Guardia Virtual Pro | Villegas Systems</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, set, push, get, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBpI_jtbEDhZFRESrn1E4kaDLfrLo72910",
+    authDomain: "guardia-virtual-ccf52.firebaseapp.com",
+    projectId: "guardia-virtual-ccf52",
+    storageBucket: "guardia-virtual-ccf52.firebasestorage.app",
+    messagingSenderId: "788405556652",
+    appId: "1:788405556652:web:8f7c4d134ef8e52d2ed609",
+    measurementId: "G-B607QZVWMF",
+    databaseURL: "https://guardia-virtual-ccf52-default-rtdb.firebaseio.com/"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  window._db = db; window._fbRef = ref; window._fbSet = set; window._fbPush = push; window._fbGet = get; window._fbOnValue = onValue; window._fbUpdate = update; window._fbRemove = remove; window._fbReady = true;
+  document.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<style>
+:root{
+  --bg:#06120a; --bg2:#0b1d0f; --bg3:#0f2414;
+  --card:#0d1c10; --card2:#122016; --card3:#172a1b;
+  --cyan:#2aff7a; --cyan-glow:rgba(42,255,122,0.3);
+  --text:#eef5f0; --text2:#7da882; --text3:#3d6645;
+  --border:rgba(42,255,122,.1); --border2:rgba(42,255,122,.22);
+  --danger:#ff4d6b; --warn:#ffb830; --r:14px; --rs:8px;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{font-family:'Outfit',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden;}
+
+/* MARCA DE AGUA VILLEGAS SYSTEMS */
+body::before {
+    content: "VILLEGAS SYSTEMS";
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 8vw; font-weight: 900; color: rgba(42,255,122,0.015);
+    pointer-events: none; z-index: -1; white-space: nowrap;
+}
+
+/* APP LAYOUT - QUINIELA STYLE */
+#splash{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .5s}
+#splash.hide{opacity:0;pointer-events:none}
+.splash-ball{width:70px;height:70px;border-radius:50%;background:conic-gradient(var(--cyan) 0%,#000 40%,var(--cyan) 100%);animation:spin 1.5s linear infinite;box-shadow:0 0 40px rgba(42,255,122,.5)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+#app{display:none; min-height:100vh; flex-direction:column;}
+.app-header{background:var(--bg2); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:200; backdrop-filter:blur(12px);}
+.header-inner{display:flex; align-items:center; justify-content:space-between; padding:8px 12px; max-width:1400px; margin:0 auto; width:100%;}
+.header-logo{font-family:'Bebas Neue'; font-size:18px; letter-spacing:2px; color:var(--cyan);}
+
+.header-nav{display:none; align-items:center; gap:1px; flex:1; justify-content:center;}
+.hnav-btn{padding:6px 11px; font-size:10px; font-weight:700; color:var(--text3); background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; text-transform:uppercase; transition:all .15s;}
+.hnav-btn.active{color:var(--cyan); border-bottom-color:var(--cyan);}
+
+.app-body{display:flex; flex:1; max-width:1400px; margin:0 auto; width:100%;}
+.sidebar{display:none; width:220px; flex-shrink:0; border-right:1px solid var(--border); padding:14px 0; position:sticky; top:60px; height:fit-content;}
+.sb-link{display:flex; align-items:center; gap:9px; padding:9px 16px; font-size:12px; font-weight:600; color:var(--text2); cursor:pointer; border-left:3px solid transparent; transition:all .15s; background:none; border:none; width:100%; text-align:left;}
+.sb-link.active{color:var(--cyan); border-left-color:var(--cyan); background:rgba(42,255,122,.06);}
+
+.main-content{flex:1; min-width:0; padding:15px;}
+.right-panel{display:none; width:280px; flex-shrink:0; border-left:1px solid var(--border); padding:16px;}
+
+/* CARDS & UI */
+.card{background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:14px; margin-bottom:12px;}
+.sec-head{font-family:'Bebas Neue'; font-size:22px; letter-spacing:2px; color:var(--text); margin-bottom:12px; display:flex; align-items:center; gap:10px;}
+.stat-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; margin-bottom:12px;}
+.stat-card{background:var(--card2); border-radius:var(--rs); padding:10px; text-align:center;}
+.stat-val{font-family:'Bebas Neue'; font-size:26px; color:var(--cyan); line-height:1;}
+.stat-lbl{font-size:9px; color:var(--text3); margin-top:2px; text-transform:uppercase;}
+
+/* FORM ELEMENTS */
+.field{margin-bottom:12px; position:relative;}
+.field label{display:block; font-size:11px; color:var(--text2); margin-bottom:3px; font-weight:500;}
+.field input, .field select, .field textarea{width:100%; padding:8px 11px; font-size:13px; font-family:'Outfit'; border:1px solid var(--border2); border-radius:var(--rs); background:var(--card2); color:var(--text); outline:none;}
+.field input:focus{border-color:var(--cyan);}
+.btn{width:100%; padding:10px; background:var(--cyan); color:var(--bg); border:none; border-radius:var(--rs); font-size:13px; font-weight:700; cursor:pointer; transition:all .15s;}
+.btn:active{transform:scale(.97)}
+.btn-warn{background:var(--warn);}
+.btn-ghost{background:transparent; color:var(--cyan); border:1.5px solid var(--border2);}
+
+/* TURN CLOCK */
+.shift-timer{background:var(--card3); border:1px solid var(--cyan); padding:5px 12px; border-radius:20px; font-family:monospace; color:var(--cyan); font-weight:bold; font-size:14px; box-shadow:0 0 10px rgba(42,255,122,0.2);}
+
+@media(min-width:768px){ .header-nav{display:flex;} .sidebar{display:block;} .stat-grid{grid-template-columns:repeat(4,1fr);} }
+@media(min-width:1100px){ .right-panel{display:block;} }
+
+.nav-tabs-mobile{display:flex; position:fixed; bottom:0; left:0; right:0; background:var(--bg2); border-top:1px solid var(--border); padding:10px; justify-content:space-around; z-index:1000;}
+@media(min-width:768px){ .nav-tabs-mobile{display:none;} }
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="splash-ball"></div>
+  <div class="splash-title">VILLEGAS SYSTEMS</div>
+  <div style="font-size:10px;color:var(--text2);letter-spacing:3px">TECNOLOGÍA DE SEGURIDAD VIRTUAL</div>
+</div>
+
+<div id="app">
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-logo">🛡️ GUARD PRO</div>
+      <nav class="header-nav" id="desktopNav">
+        <button class="hnav-btn active" onclick="window.nav('visitas')">Visitas</button>
+        <button class="hnav-btn" onclick="window.nav('residentes')">Residentes</button>
+        <button class="hnav-btn" onclick="window.nav('registro')">Registrar</button>
+        <button class="hnav-btn" onclick="window.nav('personal')">Personal Autorizado</button>
+        <button class="hnav-btn" onclick="window.nav('stats')">Estadísticas</button>
+        <button class="hnav-btn" id="adminBtnD" style="display:none;" onclick="window.nav('admin')">⚙ Admin</button>
+      </nav>
+      <div style="display:flex; align-items:center; gap:10px;">
+          <div id="timer-box" style="display:none;" class="shift-timer">00:00:00</div>
+          <div class="avatar" id="userAvatar">?</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="app-body">
+    <aside class="sidebar">
+      <div class="sb-section">Turno Activo</div>
+      <div style="padding:10px 16px;">
+          <button class="btn btn-ghost btn-sm" id="btn-turno" onclick="window.toggleTurno()">Iniciar Turno</button>
+      </div>
+      <div class="sb-section">Módulos</div>
+      <button class="sb-link active" onclick="window.nav('visitas')">📋 Lista de Visitas</button>
+      <button class="sb-link" onclick="window.nav('residentes')">🏠 Censo Residentes</button>
+      <button class="sb-link" onclick="window.nav('registro')">➕ Registrar Entrada</button>
+      <button class="sb-link" onclick="window.nav('incidencias')">⚠️ Incidencias</button>
+      <div class="sb-section">Administración</div>
+      <button class="sb-link" id="adminBtnSide" style="display:none;" onclick="window.nav('admin')">⚙ Configuración</button>
+      <button class="sb-link" style="color:var(--danger); margin-top:20px;" onclick="window.logout()">🚪 Salir</button>
+    </aside>
+
+    <main class="main-content">
+      <!-- PANTALLA: LOGIN -->
+      <div id="screen-login" class="screen" style="display:block;">
+        <div style="max-width:400px; margin:60px auto 0;">
+            <div class="card" style="text-align:center; padding:30px;">
+                <h1 class="sec-head" style="justify-content:center;">ACCESO RESTRINGIDO</h1>
+                <div class="field"><label>Usuario Operador</label><input id="l-user" type="text" placeholder="Admin2389"></div>
+                <div class="field"><label>Contraseña</label>
+                    <input id="l-pass" type="password" placeholder="••••••••">
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px; font-size:12px;">
+                    <input type="checkbox" id="l-remember" checked> Guardar en este equipo
+                </div>
+                <button class="btn" onclick="window.doLogin()">AUTENTICAR</button>
+            </div>
+            <p style="text-align:center; font-size:10px; color:var(--text3);">VIRTUAL GUARD PRO BY VILLEGAS SYSTEMS</p>
+        </div>
+      </div>
+
+      <!-- PANTALLA: LISTA DE VISITAS (RANKING STYLE) -->
+      <div id="screen-visitas" class="screen" style="display:none;">
+        <div class="stat-grid">
+            <div class="stat-card"><div class="stat-val" id="s-total">0</div><div class="stat-lbl">Entradas Hoy</div></div>
+            <div class="stat-card"><div class="stat-val" id="s-del">0</div><div class="stat-lbl">Deliverys</div></div>
+            <div class="stat-card"><div class="stat-val" id="s-inc">0</div><div class="stat-lbl">Incidencias</div></div>
+            <div class="stat-card"><div class="stat-val" id="s-res">0</div><div class="stat-lbl">Residentes</div></div>
+        </div>
+        <div class="card">
+            <div class="card-title">Buscador Inteligente (Casa, Nombre, Fecha)</div>
+            <input type="text" id="v-search" placeholder="🔍 Buscar..." oninput="window.renderVisitas()" style="margin-bottom:15px;">
+            <div id="list-visitas"></div>
+        </div>
+      </div>
+
+      <!-- PANTALLA: REGISTRO (LOGICA RESIDENTE/VISITANTE) -->
+      <div id="screen-registro" class="screen" style="display:none;">
+        <div class="sec-head">Nuevo Registro de Acceso</div>
+        <div class="card">
+            <div class="field"><label>¿Es Residente o Visitante?</label>
+                <select id="reg-status" onchange="window.toggleRegMode()">
+                    <option value="visitante">Visitante / delivery / familiar</option>
+                    <option value="residente">Residente de la Urbanización</option>
+                </select>
+            </div>
+            
+            <div class="field"><label>Seleccionar Casa (Lagos 01-200)</label>
+                <select id="reg-casa" onchange="window.loadHouseInfo()">
+                    <option value="">-- Seleccionar --</option>
+                </select>
+            </div>
+
+            <div id="house-preview" class="card" style="display:none; background:var(--bg3); border:1px dashed var(--cyan);">
+                <div style="font-size:11px; color:var(--cyan); margin-bottom:5px;">🏠 DATOS DEL CENSO:</div>
+                <div id="hp-content" style="font-size:12px;"></div>
+            </div>
+
+            <div class="field"><label>Nombre Completo</label><input id="reg-nom" type="text"></div>
+            <div class="field"><label>Categoría / Motivo</label>
+                <select id="reg-cat">
+                    <option value="Familiar">Familiar Autorizado</option>
+                    <option value="Delivery">Delivery / Encomienda</option>
+                    <option value="Trabajador">Trabajador de Casa</option>
+                    <option value="Visita">Visita General</option>
+                    <option value="Seguridad">Ranger / Seguridad</option>
+                </select>
+            </div>
+            <div class="field"><label>Vehículo / Placa</label><input id="reg-veh" type="text" placeholder="Ej: AB123CD"></div>
+            <button class="btn" onclick="window.saveIngreso()">REGISTRAR ENTRADA</button>
+        </div>
+      </div>
+
+      <!-- PANTALLA: RESIDENTES (CENSO) -->
+      <div id="screen-residentes" class="screen" style="display:none;">
+        <div class="sec-head">Censo de Casas Lagos</div>
+        <div class="card">
+            <div class="field"><label>Número de Casa</label><input id="c-casa" type="text" placeholder="Lagos 01"></div>
+            <div class="field"><label>Propietario 1 / Teléfono</label><input id="c-p1" type="text"></div>
+            <div class="field"><label>Propietario 2 / Teléfono</label><input id="c-p2" type="text"></div>
+            <div class="field"><label>Personal Autorizado Fijo (Nombre - Cargo)</label><textarea id="c-auth" rows="3"></textarea></div>
+            <button class="btn" onclick="window.saveResident()">ACTUALIZAR CENSO</button>
+        </div>
+      </div>
+
+      <!-- PANTALLA: ADMIN -->
+      <div id="screen-admin" class="screen" style="display:none;">
+        <div class="sec-head">Panel de Administración Pro</div>
+        <div class="card">
+            <div class="card-title">Personal Registrado (Claves visibles para Admin)</div>
+            <div id="adm-user-list"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- PANEL DERECHO (ESTILO QUINIELA) -->
+    <aside class="right-panel">
+        <div class="card" style="background:var(--bg3); border-color:var(--warn);">
+            <div class="card-title" style="color:var(--warn);">🔔 ÚLTIMAS INCIDENCIAS</div>
+            <div id="recent-incidents" style="font-size:11px;">Ninguna reportada</div>
+        </div>
+        <div class="card">
+            <div class="card-title">👮 TURNOS ACTIVOS</div>
+            <div id="active-guards" style="font-size:11px;"></div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="window.exportPDF()">📥 Descargar Reporte Hoy (PDF)</button>
+    </aside>
+  </div>
+</div>
+
+<nav class="nav-tabs-mobile">
+    <button class="nav-item active" onclick="window.nav('visitas')">Visitas</button>
+    <button class="nav-item" onclick="window.nav('registro')">Registrar</button>
+    <button class="nav-item" onclick="window.nav('incidencias')">Reportar</button>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+// --- CONFIGURACIÓN Y ESTADOS ---
+const ADMIN_USER = "Admin2389";
+const ADMIN_PASS = "admin123";
+let CU = null;
+let shiftSeconds = 0;
+let shiftInterval = null;
+let _cache = { ingresos: {}, residents: {}, users: {} };
+
+// --- CORE FUNCTIONS ---
+window.toast = (m) => { const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); };
+
+window.nav = (id) => {
+    document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+    document.getElementById('screen-'+id).style.display = 'block';
+    document.querySelectorAll('.hnav-btn, .sb-link, .nav-item').forEach(b => b.classList.remove('active'));
+    if(id==='visitas') window.renderVisitas();
+    if(id==='admin') window.renderAdmin();
+};
+
+document.addEventListener('firebase-ready', () => {
+    const db = window._db;
+
+    // Generar Lagos 01-200
+    const sel = document.getElementById('reg-casa');
+    for(let i=1; i<=200; i++){
+        let n = i<10 ? '0'+i : i;
+        let opt = document.createElement('option');
+        opt.value = "Lagos "+n; opt.textContent = "Lagos "+n;
+        sel.appendChild(opt);
+    }
+
+    // Listeners
+    window._fbOnValue(window._fbRef(db, 'ingresos'), snap => { _cache.ingresos = snap.val() || {}; window.renderVisitas(); updateStats(); });
+    window._fbOnValue(window._fbRef(db, 'residents'), snap => { _cache.residents = snap.val() || {}; });
+    window._fbOnValue(window._fbRef(db, 'gv_users'), snap => { _cache.users = snap.val() || {}; });
+
+    // Auto Login
+    const saved = localStorage.getItem('gv_pro_session');
+    if(saved){
+        const d = JSON.parse(saved);
+        doLoginManual(d.u, d.p);
+    }
+
+    setTimeout(() => { document.getElementById('splash').classList.add('hide'); }, 1500);
+});
+
+// --- AUTENTICACIÓN ---
+window.doLogin = () => {
+    const u = document.getElementById('l-user').value.trim();
+    const p = document.getElementById('l-pass').value.trim();
+    doLoginManual(u,p);
+};
+
+function doLoginManual(u,p){
+    if(u === ADMIN_USER && p === ADMIN_PASS){
+        CU = { name: "Administrador Maestro", role: "Super Admin", isAdmin: true };
+    } else if(_cache.users[u] && _cache.users[u].pass === p){
+        if(!_cache.users[u].approved) return window.toast("Acceso pendiente de aprobación");
+        CU = { ..._cache.users[u], id: u, isAdmin: false };
+    } else {
+        return window.toast("Credenciales Incorrectas");
+    }
+
+    if(document.getElementById('l-remember').checked){
+        localStorage.setItem('gv_pro_session', JSON.stringify({u,p}));
+    }
+
+    startApp();
+}
+
+function startApp(){
+    document.getElementById('screen-login').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('userAvatar').textContent = CU.name.substring(0,2).toUpperCase();
+    if(CU.isAdmin){
+        document.getElementById('adminBtnD').style.display = 'block';
+        document.getElementById('adminBtnSide').style.display = 'block';
+    }
+    nav('visitas');
+}
+
+// --- RELOJ DE TURNO ---
+window.toggleTurno = () => {
+    const btn = document.getElementById('btn-turno');
+    const timerBox = document.getElementById('timer-box');
+    if(btn.textContent === "Iniciar Turno"){
+        btn.textContent = "Finalizar Turno"; btn.classList.add('btn-warn');
+        timerBox.style.display = 'block';
+        shiftSeconds = 0;
+        shiftInterval = setInterval(() => {
+            shiftSeconds++;
+            let h = Math.floor(shiftSeconds/3600).toString().padStart(2,'0');
+            let m = Math.floor((shiftSeconds%3600)/60).toString().padStart(2,'0');
+            let s = (shiftSeconds%60).toString().padStart(2,'0');
+            timerBox.textContent = `${h}:${m}:${s}`;
+        }, 1000);
+        window.toast("Turno Iniciado Correctamente");
+    } else {
+        clearInterval(shiftInterval);
+        btn.textContent = "Iniciar Turno"; btn.classList.remove('btn-warn');
+        timerBox.style.display = 'none';
+        window.toast("Turno Finalizado");
+    }
+};
+
+// --- CENSO ---
+window.loadHouseInfo = () => {
+    const casa = document.getElementById('reg-casa').value;
+    const pre = document.getElementById('house-preview');
+    if(!casa || !_cache.residents[casa]) return pre.style.display = 'none';
+    const c = _cache.residents[casa];
+    document.getElementById('hp-content').innerHTML = `<b>Residentes:</b> ${c.p1} / ${c.p2}<br><b>Autorizados:</b> ${c.auth || 'Sin registro'}`;
+    pre.style.display = 'block';
+};
+
+window.saveResident = async () => {
+    const c = document.getElementById('c-casa').value.trim();
+    if(!c) return window.toast("Ingresa número de casa");
+    const data = { p1: document.getElementById('c-p1').value, p2: document.getElementById('c-p2').value, auth: document.getElementById('c-auth').value };
+    await window._fbUpdate(window._fbRef(window._db, 'residents/'+c), data);
+    window.toast("Censo Lagos Actualizado ✓");
+};
+
+// --- REGISTRO ---
+window.saveIngreso = async () => {
+    const casa = document.getElementById('reg-casa').value;
+    const nom = document.getElementById('reg-nom').value.trim();
+    if(!casa || !nom) return window.toast("Casa y Nombre son obligatorios");
+
+    const data = {
+        casa, nom, cat: document.getElementById('reg-cat').value,
+        veh: document.getElementById('reg-veh').value || "Ninguno",
+        guardia: CU.name, ts: Date.now(),
+        fecha: new Date().toLocaleDateString('es-VE'),
+        hora: new Date().toLocaleTimeString('es-VE', {hour:'2-digit', minute:'2-digit'})
+    };
+
+    await window._fbPush(window._fbRef(window._db, 'ingresos'), data);
+    window.toast("Entrada Registrada en Bitácora ✓");
+    ['reg-nom','reg-veh'].forEach(id => document.getElementById(id).value = "");
+    nav('visitas');
+};
+
+window.renderVisitas = () => {
+    const c = document.getElementById('list-visitas');
+    const q = document.getElementById('v-search').value.toLowerCase();
+    const all = Object.values(_cache.ingresos).sort((a,b) => b.ts - a.ts);
+    c.innerHTML = "";
+
+    all.filter(i => i.nom.toLowerCase().includes(q) || i.casa.toLowerCase().includes(q)).forEach(i => {
+        c.innerHTML += `
+            <div class="card" style="border-left:4px solid var(--cyan); padding:10px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <div style="font-weight:800; color:var(--cyan);">${i.casa} <span style="color:#fff">| ${i.nom}</span></div>
+                    <div style="font-size:10px; color:var(--text2);">${i.cat} • Placa: ${i.veh}</div>
+                </div>
+                <div style="text-align:right; font-size:10px; color:var(--text3);">
+                    ${i.fecha}<br>${i.hora}
+                </div>
+            </div>`;
+    });
+};
+
+function updateStats(){
+    const data = Object.values(_cache.ingresos);
+    const hoy = new Date().toLocaleDateString('es-VE');
+    const filtered = data.filter(x => x.fecha === hoy);
+    document.getElementById('s-total').textContent = filtered.length;
+    document.getElementById('s-del').textContent = filtered.filter(x => x.cat === 'Delivery').length;
+    document.getElementById('s-res').textContent = Object.keys(_cache.residents).length;
+}
+
+window.renderAdmin = () => {
+    const c = document.getElementById('adm-user-list');
+    c.innerHTML = "";
+    Object.entries(_cache.users).forEach(([id, u]) => {
+        c.innerHTML += `
+            <div class="card" style="background:var(--bg3);">
+                <div style="display:flex; justify-content:space-between;">
+                    <strong>${u.name} (@${id})</strong>
+                    <span class="badge b-vis">${u.role}</span>
+                </div>
+                <div style="font-family:monospace; font-size:12px; margin:8px 0; color:var(--cyan);">🔑 Password: ${u.pass}</div>
+                <button class="btn btn-sm btn-danger" onclick="deleteUser('${id}')">Revocar Acceso</button>
+            </div>`;
+    });
+};
+
+window.exportPDF = () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFillColor(6, 18, 10); doc.rect(0, 0, 210, 30, 'F');
+    doc.setTextColor(42, 255, 122); doc.setFontSize(22); doc.text("VILLEGAS SYSTEMS - SECURITY REPORT", 15, 20);
+    const rows = Object.values(_cache.ingresos).map(i => [i.fecha, i.hora, i.casa, i.nom, i.cat, i.operador]);
+    doc.autoTable({ head: [['Fecha', 'Hora', 'Casa', 'Persona', 'Motivo', 'Guardia']], body: rows, startY: 35, theme: 'grid' });
+    doc.save(`Reporte_Seguridad_${Date.now()}.pdf`);
+};
+
+</script>
+</body>
+</html>
