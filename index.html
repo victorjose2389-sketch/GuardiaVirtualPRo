@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Villegas System – Guardia Virtual PRO</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<!-- Librerías para PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, set, push, get, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBpI_jtbEDhZFRESrn1E4kaDLfrLo72910",
+    authDomain: "guardia-virtual-ccf52.firebaseapp.com",
+    projectId: "guardia-virtual-ccf52",
+    storageBucket: "guardia-virtual-ccf52.firebasestorage.app",
+    messagingSenderId: "788405556652",
+    appId: "1:788405556652:web:8f7c4d134ef8e52d2ed609",
+    measurementId: "G-B607QZVWMF",
+    databaseURL: "https://guardia-virtual-ccf52-default-rtdb.firebaseio.com/"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  window._db = db; window._fbRef = ref; window._fbSet = set; window._fbPush = push; window._fbGet = get; window._fbOnValue = onValue; window._fbUpdate = update; window._fbRemove = remove;
+  document.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<style>
+  * { font-family:'Outfit',sans-serif; box-sizing:border-box; }
+  :root { --primary: #22c55e; --bg-dark: #0f172a; }
+  
+  .lbl { display:block; font-size:10px; color:#94a3b8; text-transform:uppercase; letter-spacing:.07em; margin-bottom:4px; margin-top:10px; font-weight: 700; }
+  .inp { width:100%; background:#f1f5f9; border:1px solid #e2e8f0; padding:12px; border-radius:14px; font-size:14px; color:#1e293b; outline:none; }
+  .inp:focus { border-color:var(--primary); background:#fff; box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1); }
+  
+  .btn-g { width:100%; background:var(--primary); border:none; border-radius:14px; padding:14px; color:#fff; font-weight:700; font-size:14px; cursor:pointer; transition: 0.2s; }
+  .btn-g:active { transform: scale(0.97); }
+
+  .menu-btn { background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; padding:15px 5px; text-align:center; transition: 0.2s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+  .menu-btn.active { background:var(--bg-dark); color:#fff; border-color:var(--bg-dark); }
+  .menu-btn i { display:block; font-style:normal; font-size:20px; margin-bottom:4px; }
+  .menu-btn span { font-size:11px; font-weight:700; }
+
+  .item-card { background:#fff; border-radius:18px; padding:15px; margin-bottom:12px; border:1px solid #edf2f7; position:relative; }
+  
+  .watermark { position:fixed; bottom:12px; right:12px; font-size:10px; font-weight:800; color:rgba(0,0,0,0.03); pointer-events:none; z-index:100; text-transform:uppercase; }
+  
+  #splash { position:fixed; inset:0; z-index:9999; background:var(--bg-dark); display:flex; flex-direction:column; align-items:center; justify-content:center; transition:0.5s; }
+  #splash.hide { opacity:0; pointer-events:none; }
+</style>
+</head>
+<body class="bg-slate-200 flex justify-center items-center min-h-screen p-0 sm:p-4">
+
+<div id="splash">
+  <div class="w-16 h-16 border-4 border-slate-700 border-top-4 border-t-green-500 rounded-full animate-spin"></div>
+  <h1 class="text-white mt-6 font-bold tracking-widest text-xl">VILLEGAS SYSTEMS</h1>
+</div>
+
+<!-- CONTENEDOR TIPO SMARTPHONE -->
+<div class="w-full max-w-md bg-white sm:rounded-[40px] shadow-2xl overflow-hidden relative flex flex-col" style="height:100vh; max-height:850px;">
+
+    <!-- ================= PANTALLA: LOGIN / REGISTRO ================= -->
+    <div id="screen-auth" class="h-full flex flex-col p-8 bg-slate-900 overflow-y-auto">
+        <div class="my-auto">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-slate-800 rounded-3xl mx-auto flex items-center justify-center border border-slate-700 mb-4">
+                    <span class="text-4xl">🛡️</span>
+                </div>
+                <h1 class="text-white text-3xl font-black">Villegas <span class="text-green-500">System</span></h1>
+                <p class="text-slate-400 text-xs tracking-widest mt-2 uppercase">Guardia Virtual PRO</p>
+            </div>
+
+            <div class="bg-slate-800 p-6 rounded-[24px] border border-slate-700 shadow-xl">
+                <div class="flex bg-slate-950 p-1 rounded-xl mb-6">
+                    <button id="btn-t-log" class="flex-1 py-2 rounded-lg text-sm font-bold bg-green-500 text-slate-950" onclick="switchAuth('log')">Entrar</button>
+                    <button id="btn-t-reg" class="flex-1 py-2 rounded-lg text-sm font-bold text-slate-400" onclick="switchAuth('reg')">Registrarse</button>
+                </div>
+
+                <div id="form-log">
+                    <label class="lbl !text-green-500">ID Operador</label>
+                    <input id="l-user" type="text" class="inp !bg-slate-900 !text-white !border-slate-700 mb-4" placeholder="Ej: Admin2389">
+                    <label class="lbl !text-green-500">Clave de Acceso</label>
+                    <div class="relative mb-4">
+                        <input id="l-pass" type="password" class="inp !bg-slate-900 !text-white !border-slate-700" placeholder="••••••••">
+                        <button class="absolute right-3 top-3 text-slate-500" onclick="togglePass('l-pass')">👁️</button>
+                    </div>
+                    <div class="flex items-center gap-2 mb-6">
+                        <input type="checkbox" id="l-remember" class="w-4 h-4 accent-green-500" checked>
+                        <span class="text-slate-400 text-xs">Recordar en este equipo</span>
+                    </div>
+                    <button class="btn-g" onclick="doLogin()">Autenticar Turno</button>
+                </div>
+
+                <div id="form-reg" class="hidden">
+                    <label class="lbl !text-green-500">Nombre Completo</label>
+                    <input id="r-name" type="text" class="inp !bg-slate-900 !text-white !border-slate-700 mb-2">
+                    <label class="lbl !text-green-500">Usuario Deseado</label>
+                    <input id="r-user" type="text" class="inp !bg-slate-900 !text-white !border-slate-700 mb-2">
+                    <label class="lbl !text-green-500">Correo</label>
+                    <input id="r-email" type="email" class="inp !bg-slate-900 !text-white !border-slate-700 mb-2">
+                    <label class="lbl !text-green-500">Rol Solicitado</label>
+                    <select id="r-role" class="inp !bg-slate-900 !text-white !border-slate-700 mb-2">
+                        <option>Oficial de Seguridad</option>
+                        <option>Supervisor de lo Virtual</option>
+                        <option>Administrador del Complejo</option>
+                    </select>
+                    <label class="lbl !text-green-500">Establecer Clave</label>
+                    <div class="relative mb-6">
+                        <input id="r-pass" type="password" class="inp !bg-slate-900 !text-white !border-slate-700">
+                        <button class="absolute right-3 top-3 text-slate-500" onclick="togglePass('r-pass')">👁️</button>
+                    </div>
+                    <button class="btn-g" onclick="doRegister()">Enviar Solicitud</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= PANTALLA: SELECCIONAR TURNO ================= -->
+    <div id="screen-turno" class="h-full hidden flex-col justify-center items-center p-10 bg-slate-900">
+        <div class="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mb-8 border-2 border-green-500/30">
+            <span class="text-5xl">🕒</span>
+        </div>
+        <h2 class="text-white text-3xl font-black mb-2">Villegas <span class="text-green-500">System</span></h2>
+        <p class="text-slate-400 text-sm mb-10 tracking-widest uppercase">Guardia Virtual PRO</p>
+        
+        <label class="text-slate-500 text-xs font-bold uppercase tracking-widest mb-4">Seleccionar Turno Actual</label>
+        <button onclick="startShift('Día')" class="w-full bg-green-500 text-slate-900 p-5 rounded-2xl font-black text-base mb-4 shadow-lg shadow-green-500/20">☀️ TURNO DÍA — ACTIVO</button>
+        <button onclick="startShift('Noche')" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-black text-base shadow-lg shadow-blue-600/20">🌙 TURNO NOCHE — ACTIVO</button>
+    </div>
+
+    <!-- ================= PANTALLA: APP PRINCIPAL (DASHBOARD) ================= -->
+    <div id="app-main" class="h-full hidden flex flex-col bg-slate-50">
+        
+        <!-- Header -->
+        <header class="bg-slate-900 text-white p-5 rounded-b-[30px] shadow-lg flex-shrink-0">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h3 class="font-black text-lg">Villegas <span class="text-green-500">System</span></h3>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-tighter">Guardia Virtual PRO</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div id="timer" class="bg-black/40 px-3 py-1 rounded-lg text-green-500 font-mono font-bold border border-green-500/30">00:00:00</div>
+                    <button onclick="logout()" class="bg-slate-800 p-2 rounded-lg text-xs">Salir</button>
+                </div>
+            </div>
+            <div class="text-[11px] font-bold text-blue-400 flex items-center gap-2">
+                <span id="user-display">👤 Cargando...</span>
+                <span class="w-1 h-1 bg-slate-600 rounded-full"></span>
+                <span id="date-display">Viernes, 26 de Junio</span>
+            </div>
+        </header>
+
+        <!-- Menu Grid (Estilo que te gusta) -->
+        <div class="grid grid-cols-3 gap-3 p-4 flex-shrink-0">
+            <button onclick="nav('visitas')" id="btn-vis" class="menu-btn active"><i>📋</i><span>Visitas</span></button>
+            <button onclick="nav('stats')"   id="btn-sta" class="menu-btn"><i>📊</i><span>Stats</span></button>
+            <button onclick="window.open('https://wa.me/')" class="menu-btn"><i>📢</i><span>WP</span></button>
+            <button onclick="nav('lagos')"   id="btn-lag" class="menu-btn"><i>🏠</i><span>Lagos</span></button>
+            <button onclick="nav('fam')"     id="btn-fam" class="menu-btn"><i>👨‍👩‍👧</i><span>Fam.</span></button>
+            <button onclick="nav('personal')" id="btn-per" class="menu-btn"><i>🛠️</i><span>Personal</span></button>
+        </div>
+
+        <!-- Contenido Dinámico -->
+        <div class="flex-1 overflow-y-auto px-4 pb-20">
+            
+            <!-- SECCION: VISITAS -->
+            <div id="v-visitas" class="v-section">
+                <div class="flex justify-between items-center mt-2 mb-4">
+                    <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest">Registros de Turno</h2>
+                    <button class="bg-green-500 text-slate-900 px-4 py-2 rounded-xl text-xs font-bold shadow-lg" onclick="nav('form-ingreso')">+ NUEVO</button>
+                </div>
+                <div class="mb-4">
+                    <input type="text" id="search-vis" placeholder="🔍 Buscar por casa o nombre..." class="inp shadow-sm" oninput="renderIngresos()">
+                </div>
+                <div id="list-ingresos"></div>
+            </div>
+
+            <!-- SECCION: FORMULARIO INGRESO -->
+            <div id="v-form-ingreso" class="v-section hidden">
+                <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
+                    <label class="lbl">Tipo de Persona</label>
+                    <select id="i-cat" class="inp mb-2">
+                        <option value="Visitante">Visitante General</option>
+                        <option value="Residente">Residente</option>
+                        <option value="Familiar">Familiar Autorizado</option>
+                        <option value="Trabajador">Trabajador de Casa</option>
+                        <option value="Delivery">Delivery / Encomienda</option>
+                    </select>
+                    <label class="lbl">Casa (Lagos 01-200)</label>
+                    <select id="i-casa" class="inp mb-2" onchange="previewCasa()"></select>
+                    <div id="preview-casa" class="hidden p-3 bg-slate-50 border border-dashed border-green-500 rounded-xl mb-4 text-xs text-slate-600"></div>
+                    
+                    <label class="lbl">Nombre Completo</label>
+                    <input id="i-nom" type="text" class="inp mb-2">
+                    <label class="lbl">Vehículo / Placa</label>
+                    <input id="i-veh" type="text" class="inp mb-4" placeholder="Ej: AB123CD">
+                    
+                    <button class="btn-g" onclick="saveIngreso()">REGISTRAR ENTRADA</button>
+                </div>
+            </div>
+
+            <!-- SECCION: LAGOS (CENSO) -->
+            <div id="v-lagos" class="v-section hidden">
+                <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm mb-4">
+                    <h4 class="text-xs font-bold text-slate-400 mb-4 uppercase">Actualizar Censo</h4>
+                    <label class="lbl">ID Casa</label>
+                    <input id="c-id" type="text" class="inp mb-2" placeholder="Lagos 01">
+                    <label class="lbl">Residentes (Dueños)</label>
+                    <input id="c-r1" type="text" class="inp mb-2" placeholder="Nombres">
+                    <label class="lbl">Teléfonos</label>
+                    <input id="c-t1" type="text" class="inp mb-4" placeholder="Números">
+                    <button class="btn-g" onclick="saveCenso()">GUARDAR EN CENSO</button>
+                </div>
+            </div>
+
+            <!-- SECCION: ADMIN (USUARIOS) -->
+            <div id="v-admin" class="v-section hidden">
+                <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Gestión de Personal</h2>
+                <div id="list-users-admin"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="watermark">Villegas Systems ®</div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// --- LÓGICA MAESTRA ---
+const MASTER_U = "Admin2389"; const MASTER_P = "admin123";
+let CU = null; let timerInt = null; let secs = 0; let currentTurno = "";
+let _cache = { ingresos: {}, users: {}, censo: {} };
+
+window.toast = (m) => { const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); t.className = "fixed top-5 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full text-xs font-bold shadow-2xl z-[10001] opacity-100 transition-all"; setTimeout(()=>t.style.opacity="0",2500); };
+window.togglePass = (id) => { const e=document.getElementById(id); e.type = e.type==='password'?'text':'password'; };
+
+window.switchAuth = (t) => {
+    document.getElementById('form-log').classList.toggle('hidden', t==='reg');
+    document.getElementById('form-reg').classList.toggle('hidden', t==='log');
+    document.getElementById('btn-t-log').className = t==='log' ? "flex-1 py-2 rounded-lg text-sm font-bold bg-green-500 text-slate-950" : "flex-1 py-2 rounded-lg text-sm font-bold text-slate-400";
+    document.getElementById('btn-t-reg').className = t==='reg' ? "flex-1 py-2 rounded-lg text-sm font-bold bg-green-500 text-slate-950" : "flex-1 py-2 rounded-lg text-sm font-bold text-slate-400";
+};
+
+window.nav = (id) => {
+    document.querySelectorAll('.v-section').forEach(s => s.classList.add('hidden'));
+    document.getElementById('v-'+id).classList.remove('hidden');
+    document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+    if(document.getElementById('btn-'+id.substring(0,3))) document.getElementById('btn-'+id.substring(0,3)).classList.add('active');
+    if(id === 'admin') renderAdmin();
+};
+
+document.addEventListener('firebase-ready', () => {
+    const db = window._db;
+    
+    // Generar casas 1-200
+    const sel = document.getElementById('i-casa');
+    sel.innerHTML = '<option value="">-- Seleccionar Casa --</option>';
+    for(let i=1; i<=200; i++){
+        let n = i<10 ? '0'+i : i;
+        let o = document.createElement('option'); o.value="Lagos "+n; o.text="Lagos "+n; sel.appendChild(o);
+    }
+
+    // Listeners
+    window._fbOnValue(window._fbRef(db, 'ingresos'), snap => { _cache.ingresos = snap.val() || {}; renderIngresos(); });
+    window._fbOnValue(window._fbRef(db, 'gv_users'), snap => { _cache.users = snap.val() || {}; if(CU?.isAdmin) renderAdmin(); });
+    window._fbOnValue(window._fbRef(db, 'censo'), snap => { _cache.censo = snap.val() || {}; });
+
+    // Auto Login
+    const saved = localStorage.getItem('gv_pro_session');
+    if(saved){ const d=JSON.parse(saved); login(d.u, d.p, true); }
+    
+    setTimeout(() => document.getElementById('splash').classList.add('hide'), 1500);
+});
+
+// AUTH
+window.doLogin = () => login(document.getElementById('l-user').value.trim(), document.getElementById('l-pass').value.trim());
+
+function login(u,p,auto=false){
+    if(u === MASTER_U && p === MASTER_P){
+        CU = { name: "Admin Maestro", role: "Administrador Maestro", isAdmin: true };
+    } else if(_cache.users[u] && _cache.users[u].pass === p){
+        if(!_cache.users[u].approved) return window.toast("⏳ Esperando aprobación");
+        CU = { ..._cache.users[u], id: u, isAdmin: (_cache.users[u].role.includes("Administrador")) };
+    } else return window.toast("❌ Credenciales incorrectas");
+
+    if(document.getElementById('l-remember')?.checked && !auto) localStorage.setItem('gv_pro_session', JSON.stringify({u,p}));
+    startFlow();
+}
+
+window.doRegister = async () => {
+    const u = document.getElementById('r-user').value.trim().toLowerCase();
+    const n = document.getElementById('r-name').value.trim();
+    const p = document.getElementById('r-pass').value.trim();
+    if(!u || !p || !n) return window.toast("⚠️ Completa los campos");
+    
+    await window._fbSet(window._fbRef(window._db, 'gv_users/' + u), {
+        name: n, pass: p, email: document.getElementById('r-email').value, 
+        role: document.getElementById('r-role').value, approved: false
+    });
+    window.toast("✅ Solicitud enviada al Admin");
+    switchAuth('log');
+};
+
+function startFlow(){
+    document.getElementById('screen-auth').classList.add('hidden');
+    document.getElementById('screen-turno').classList.remove('hidden');
+}
+
+window.startShift = (t) => {
+    currentTurno = t;
+    document.getElementById('screen-turno').classList.add('hidden');
+    document.getElementById('app-main').classList.remove('hidden');
+    document.getElementById('user-display').textContent = `👤 ${CU.name} (${CU.role})`;
+    document.getElementById('date-display').textContent = new Date().toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'long' });
+    
+    if(CU.isAdmin) {
+        document.getElementById('adminNavBtn').style.display='block';
+        document.getElementById('adminNavBtnD').style.display='block';
+        document.getElementById('adminSideLink').style.display='flex';
+    }
+    
+    startClock();
+    nav('visitas');
+};
+
+function startClock(){
+    timerInt = setInterval(() => {
+        secs++;
+        let h = Math.floor(secs/3600).toString().padStart(2,'0');
+        let m = Math.floor((secs%3600)/60).toString().padStart(2,'0');
+        let s = (secs%60).toString().padStart(2,'0');
+        document.getElementById('timer').textContent = `${h}:${m}:${s}`;
+    }, 1000);
+}
+
+// OPERACIONES
+window.previewCasa = () => {
+    const c = document.getElementById('i-casa').value;
+    const box = document.getElementById('preview-casa');
+    if(_cache.censo[c]){
+        box.innerHTML = `🏠 <b>Dueño:</b> ${_cache.censo[c].r1}<br>📞 ${_cache.censo[c].t1}`;
+        box.classList.remove('hidden');
+    } else box.classList.add('hidden');
+};
+
+window.saveIngreso = async () => {
+    const casa = document.getElementById('i-casa').value;
+    const nom = document.getElementById('i-nom').value.trim();
+    if(!casa || !nom) return window.toast("⚠️ Datos obligatorios");
+
+    const data = {
+        nom, casa, cat: document.getElementById('i-cat').value,
+        veh: document.getElementById('i-veh').value || "Ninguno",
+        guardia: CU.name, turno: currentTurno, ts: Date.now(),
+        fecha: new Date().toLocaleDateString('es-VE'),
+        hora: new Date().toLocaleTimeString('es-VE', {hour:'2-digit', minute:'2-digit'})
+    };
+
+    await window._fbPush(window._fbRef(window._db, 'ingresos'), data);
+    window.toast("✅ Entrada Registrada");
+    ['i-nom','i-veh'].forEach(i => document.getElementById(i).value = "");
+    nav('visitas');
+};
+
+function renderIngresos(){
+    const c = document.getElementById('list-ingresos');
+    const q = document.getElementById('search-vis').value.toLowerCase();
+    const all = Object.values(_cache.ingresos).sort((a,b)=>b.ts-a.ts);
+    c.innerHTML = "";
+    all.filter(i => i.nom.toLowerCase().includes(q) || i.casa.toLowerCase().includes(q)).forEach(i => {
+        c.innerHTML += `
+            <div class="item-card border-l-4 border-l-green-500">
+                <div class="status-tag st-aprobado">Turno ${i.turno}</div>
+                <div class="text-sm font-black text-slate-800">${i.casa} | ${i.nom}</div>
+                <div class="text-[10px] text-slate-500 mt-1 uppercase font-bold">${i.cat} • ${i.veh}</div>
+                <div class="text-[9px] text-slate-400 mt-2 border-t pt-2 flex justify-between">
+                    <span>👮 ${i.guardia}</span>
+                    <span>${i.fecha} ${i.hora}</span>
+                </div>
+            </div>`;
+    });
+}
+
+window.saveCenso = async () => {
+    const id = document.getElementById('c-id').value.trim();
+    if(!id) return window.toast("⚠️ ID Casa Requerido");
+    await window._fbUpdate(window._fbRef(window._db, 'censo/'+id), { 
+        r1: document.getElementById('c-r1').value, 
+        t1: document.getElementById('c-t1').value 
+    });
+    window.toast("✅ Censo Actualizado");
+    ['c-id','c-r1','c-t1'].forEach(id => document.getElementById(id).value="");
+};
+
+function renderAdmin() {
+    const c = document.getElementById('list-users-admin'); c.innerHTML = "";
+    Object.entries(_cache.users).forEach(([id, u]) => {
+        c.innerHTML += `
+            <div class="item-card bg-slate-50">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <b class="text-slate-800">${u.name}</b> <span class="text-xs text-slate-400">(@${id})</span>
+                        <p class="text-[10px] font-bold text-blue-600 uppercase">${u.role}</p>
+                    </div>
+                    <div class="bg-black text-green-500 px-2 py-1 rounded text-xs font-mono">Pass: ${u.pass}</div>
+                </div>
+                <div class="flex gap-2 mt-4">
+                    <button class="flex-1 bg-green-500 text-slate-900 py-2 rounded-xl text-[10px] font-black" onclick="approve('${id}')">${u.approved?'ACTIVO':'APROBAR'}</button>
+                    <button class="flex-1 bg-red-100 text-red-600 py-2 rounded-xl text-[10px] font-black" onclick="delUser('${id}')">BORRAR</button>
+                </div>
+            </div>`;
+    });
+}
+
+window.approve = (id) => window._fbUpdate(window._fbRef(window._db, 'gv_users/'+id), {approved:true});
+window.delUser = (id) => { if(confirm("¿Seguro?")) window._fbRemove(window._fbRef(window._db, 'gv_users/'+id)); };
+window.logout = () => { localStorage.removeItem('gv_pro_session'); location.reload(); };
+
+</script>
+</body>
+</html>
