@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1.0,user-scalable=no">
+<meta name="theme-color" content="#0b0f19">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Guardia Virtual Pro | Villegas Systems</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Librerías para Reportes -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, set, push, get, onValue, update, remove, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  // CONFIGURACIÓN EXACTA DE TU IMAGEN
+  const firebaseConfig = {
+    apiKey: "AIzaSyBpI_jtbEDhZFRESrn1E4kaDLfrLo72910",
+    authDomain: "guardia-virtual-ccf52.firebaseapp.com",
+    projectId: "guardia-virtual-ccf52",
+    storageBucket: "guardia-virtual-ccf52.firebasestorage.app",
+    messagingSenderId: "788405556652",
+    appId: "1:788405556652:web:8f7c4d134ef8e52d2ed609",
+    measurementId: "G-B607QZVWMF",
+    databaseURL: "https://guardia-virtual-ccf52-default-rtdb.firebaseio.com/"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  window._db = db; window._fbRef = ref; window._fbSet = set; window._fbPush = push; window._fbGet = get; window._fbOnValue = onValue; window._fbUpdate = update; window._fbRemove = remove;
+  document.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<style>
+:root{
+  --bg:#0b0f19; --bg2:#111827; --bg3:#1f2937;
+  --card:#131a26; --card2:#1b2333; --card3:#22314a;
+  --cyan:#00f0ff; --cyan-glow:rgba(0,240,255,0.3);
+  --green:#10b981; --warn:#f97316; --danger:#ef4444;
+  --text:#f8fafc; --text2:#94a3b8; --text3:#4b5563;
+  --border:rgba(0,240,255,0.1); --border2:rgba(0,240,255,0.22);
+  --r:14px; --rs:8px;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{font-family:'Outfit',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden;}
+
+/* SPLASH SCREEN */
+#splash{position:fixed; inset:0; z-index:9999; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; transition:opacity .5s;}
+#splash.hide{opacity:0; pointer-events:none;}
+.splash-ball{width:70px; height:70px; border-radius:50%; background:conic-gradient(var(--cyan) 0%, #000 40%, var(--cyan) 100%); animation:spin 1.5s linear infinite; box-shadow:0 0 30px var(--cyan-glow);}
+@keyframes spin{to{transform:rotate(360deg)}}
+.splash-title{font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:3px; color:var(--cyan);}
+
+/* APP LAYOUT */
+#app{display:none; flex-direction:column; min-height:100vh;}
+.app-header{background:var(--bg2); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:200; backdrop-filter:blur(12px);}
+.header-inner{display:flex; align-items:center; justify-content:space-between; padding:10px 16px; max-width:1400px; margin:0 auto; width:100%;}
+.header-logo{font-family:'Bebas Neue',sans-serif; font-size:20px; color:var(--cyan); letter-spacing:1px;}
+.header-nav{display:none; gap:5px;}
+.nav-tab, .hnav-btn, .sb-link{ background:none; border:none; color:var(--text2); font-weight:700; cursor:pointer; font-family:'Outfit'; transition:0.2s;}
+.hnav-btn{font-size:11px; text-transform:uppercase; padding:8px 12px; border-bottom:2px solid transparent;}
+.hnav-btn.active{color:var(--cyan); border-bottom-color:var(--cyan);}
+
+.app-body{display:flex; flex:1; max-width:1400px; margin:0 auto; width:100%;}
+.sidebar{display:none; width:240px; border-right:1px solid var(--border); padding:20px 0; position:sticky; top:60px; height:calc(100vh - 60px);}
+.sb-link{display:flex; align-items:center; gap:10px; padding:12px 20px; font-size:14px; width:100%; text-align:left; border-left:3px solid transparent;}
+.sb-link.active{background:rgba(0,240,255,0.05); color:var(--cyan); border-left-color:var(--cyan);}
+
+.main-content{flex:1; padding:20px 16px; min-width:0;}
+.nav-tabs{display:flex; overflow-x:auto; border-bottom:1px solid var(--border); background:var(--bg2);}
+.nav-tab{flex-shrink:0; padding:12px 18px; font-size:12px; text-transform:uppercase; border-bottom:2px solid transparent;}
+.nav-tab.active{color:var(--cyan); border-bottom-color:var(--cyan);}
+
+/* CARDS & UI */
+.screen{display:none; animation:fadeUp 0.3s ease;}
+.screen.active{display:block;}
+@keyframes fadeUp{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none}}
+.card{background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:16px; margin-bottom:16px;}
+.field{margin-bottom:12px;}
+.field label{display:block; font-size:11px; color:var(--text2); margin-bottom:4px; text-transform:uppercase; font-weight:600;}
+.field input, .field select, .field textarea{width:100%; padding:12px; background:var(--card2); border:1px solid var(--border2); border-radius:var(--rs); color:var(--text); outline:none; font-family:'Outfit';}
+.field input:focus{border-color:var(--cyan); box-shadow:0 0 10px var(--cyan-glow);}
+
+.btn{width:100%; padding:14px; background:var(--cyan); color:#000; border:none; border-radius:var(--rs); font-weight:700; cursor:pointer; transition:0.2s;}
+.btn:active{transform:scale(0.98);}
+.btn-ghost{background:transparent; border:1px solid var(--border2); color:var(--cyan);}
+.btn-danger{background:var(--danger); color:#fff;}
+.btn-sm{padding:6px 12px; font-size:11px; width:auto;}
+
+.badge{padding:2px 8px; border-radius:10px; font-size:10px; font-weight:700; text-transform:uppercase;}
+.badge-vis{background:rgba(0,240,255,0.15); color:var(--cyan);}
+.badge-res{background:rgba(16,185,129,0.15); color:var(--green);}
+.badge-tra{background:rgba(249,115,22,0.15); color:var(--warn);}
+.badge-pend{background:var(--card3); color:var(--text2);}
+
+/* UTILS */
+.empty{text-align:center; padding:40px; color:var(--text3); font-size:14px;}
+#toast{position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--cyan); color:#000; padding:10px 20px; border-radius:20px; font-size:13px; font-weight:700; opacity:0; transition:0.3s; z-index:9999;}
+#toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+.brand-watermark{position:fixed; bottom:12px; right:12px; font-size:10px; font-weight:800; color:rgba(255,255,255,0.03); pointer-events:none; z-index:100; text-transform:uppercase;}
+
+@media(min-width:768px){
+  .header-nav{display:flex;} .nav-tabs{display:none;} .sidebar{display:block;}
+}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="splash-ball"></div>
+  <div class="splash-title">GUARDIA VIRTUAL PRO</div>
+  <div class="splash-sub">VILLEGAS SYSTEMS • LOS LAGOS</div>
+  <div class="dots"><span></span><span></span><span></span></div>
+</div>
+
+<div id="app">
+  <header class="app-header" id="appHeader">
+    <div class="header-inner">
+      <div class="header-logo">🛡️ VILLEGAS <span style="color:var(--text)">SYSTEMS</span></div>
+      <nav class="header-nav">
+        <button class="hnav-btn active" onclick="window.nav('ingresos')">Registrar</button>
+        <button class="hnav-btn" onclick="window.nav('bitacora')">Bitácora</button>
+        <button class="hnav-btn" onclick="window.nav('perfil')">Perfil</button>
+        <button class="hnav-btn" id="adminNavBtnD" style="display:none;" onclick="window.nav('admin')">⚙️ Admin</button>
+      </nav>
+      <div class="header-right">
+        <span class="pts-chip" id="complexTitle">Urb. Los Lagos</span>
+        <div class="avatar" id="userAvatar" onclick="window.nav('perfil')">?</div>
+      </div>
+    </div>
+    <div class="nav-tabs">
+        <button class="nav-tab active" id="tab-ing" onclick="window.nav('ingresos')">Ingresos</button>
+        <button class="nav-tab" id="tab-bit" onclick="window.nav('bitacora')">Bitácora</button>
+        <button class="nav-tab" id="tab-per" onclick="window.nav('perfil')">Perfil</button>
+        <button class="nav-tab" id="adminNavBtn" style="display:none;" onclick="window.nav('admin')">Admin</button>
+    </div>
+  </header>
+
+  <div class="app-body">
+    <aside class="sidebar" id="sidebarEl">
+      <div class="sb-section">Seguridad</div>
+      <button class="sb-link active" id="side-ing" onclick="window.nav('ingresos')">📝 Nuevo Registro</button>
+      <button class="sb-link" id="side-bit" onclick="window.nav('bitacora')">📋 Bitácora de Acceso</button>
+      <div class="sb-section">Sistema</div>
+      <button class="sb-link" id="side-per" onclick="window.nav('perfil')">👤 Mi Perfil</button>
+      <button class="sb-link" id="adminSideLink" style="display:none;" onclick="window.nav('admin')">⚙️ Panel Admin</button>
+    </aside>
+
+    <main class="main-content">
+      <!-- PANTALLA LOGIN -->
+      <div id="screen-login" class="screen active">
+        <div class="login-wrap" style="max-width:400px; margin:0 auto; padding-top:40px;">
+          <div style="text-align:center; margin-bottom:30px;">
+            <div style="font-size:50px;">🛡️</div>
+            <h1 class="splash-title">BIENVENIDO</h1>
+            <p style="font-size:12px; color:var(--text2);">CONTROL DE ACCESO RESIDENCIAL</p>
+          </div>
+          <div class="card">
+            <div class="field"><label>Usuario / Correo</label><input id="lg-user" type="text" placeholder="Ej: Admin2389"></div>
+            <div class="field"><label>Contraseña</label><input id="lg-pass" type="password" placeholder="••••••••"></div>
+            <button class="btn" onclick="window.doLogin()">INGRESAR AL PUESTO</button>
+          </div>
+          <p style="text-align:center; font-size:11px; color:var(--text3);">Desarrollado por Villegas Systems Technologies</p>
+        </div>
+      </div>
+
+      <!-- PANTALLA REGISTRO INGRESO -->
+      <div id="screen-ingresos" class="screen">
+        <div class="sec-head">📝 REGISTRO DE VISITANTE</div>
+        <div class="card">
+          <div class="field">
+            <label>Categoría</label>
+            <select id="ins-cat">
+              <option value="Visitante">Visitante</option>
+              <option value="Residente">Residente</option>
+              <option value="Trabajador">Trabajador</option>
+              <option value="Autorizado">Autorizado por Admin</option>
+            </select>
+          </div>
+          <div class="field"><label>Nombre Completo</label><input id="ins-nom" type="text" placeholder="Nombre de la persona"></div>
+          <div class="field"><label>Cédula / Identificación</label><input id="ins-id" type="text" placeholder="Documento"></div>
+          <div class="field"><label>Destino (Casa/Apto)</label><input id="ins-des" type="text" placeholder="Ej: Casa 22"></div>
+          <div class="field"><label>Vehículo / Placa</label><input id="ins-veh" type="text" placeholder="Ej: ABC-123 (Opcional)"></div>
+          <button class="btn" onclick="window.doRegistrarAcceso()">REGISTRAR ENTRADA</button>
+        </div>
+        <div class="sec-head" style="font-size:14px; margin-top:20px;">ÚLTIMOS MOVIMIENTOS</div>
+        <div id="recentList"></div>
+      </div>
+
+      <!-- PANTALLA BITÁCORA -->
+      <div id="screen-bitacora" class="screen">
+        <div class="sec-head">📋 BITÁCORA HISTÓRICA</div>
+        <div class="card" style="padding:10px;">
+          <input type="text" id="search-bit" placeholder="🔍 Buscar por nombre o cédula..." style="width:100%; padding:10px; background:var(--bg3); border:none; border-radius:8px; color:#fff;" oninput="window.updateBitacora()">
+        </div>
+        <div id="fullBitacora"></div>
+        <div style="margin-top:15px; display:flex; gap:10px;">
+            <button class="btn btn-ghost btn-sm" onclick="window.exportCSV()">Exportar CSV</button>
+            <button class="btn btn-ghost btn-sm" onclick="window.exportPDF()">Generar PDF</button>
+        </div>
+      </div>
+
+      <!-- PANTALLA PERFIL -->
+      <div id="screen-perfil" class="screen">
+        <div class="card" style="text-align:center;">
+          <div class="avatar" style="width:80px; height:80px; font-size:30px; margin:0 auto 15px; background:var(--card3);">👤</div>
+          <h2 id="prof-name">Nombre Usuario</h2>
+          <p id="prof-role" style="color:var(--cyan); font-weight:700;">Rol</p>
+          <hr style="margin:20px 0; border:none; border-top:1px solid var(--border);">
+          <button class="btn btn-danger" onclick="window.doLogout()">CERRAR SESIÓN</button>
+        </div>
+      </div>
+
+      <!-- PANTALLA ADMIN -->
+      <div id="screen-admin" class="screen">
+        <div class="sec-head">⚙️ PANEL ADMINISTRATIVO</div>
+        <div class="card">
+          <div class="card-title">SOLICITUDES DE ACCESO PENDIENTES</div>
+          <div id="admin-pending"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">AJUSTES DEL COMPLEJO</div>
+          <div class="field"><label>Nombre de la Urbanización</label><input id="conf-name" type="text"></div>
+          <button class="btn btn-sm" onclick="window.saveSettings()">Actualizar Nombre</button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div class="brand-watermark">Villegas Systems ®</div>
+
+<script>
+// --- LÓGICA DE APLICACIÓN ---
+const ADMIN_USER = 'admin2389';
+const ADMIN_PASS = 'admin123';
+let CU = null;
+let _cache = { ingresos: {}, settings: { name: "Urb. Los Lagos" }, users: {} };
+
+window.toast = (msg) => {
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+};
+
+window.nav = (id) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  document.querySelectorAll('.nav-tab, .hnav-btn, .sb-link').forEach(el => el.classList.remove('active'));
+  // Sincronizar botones de navegación
+  if(id === 'ingresos') { document.getElementById('tab-ing').classList.add('active'); document.getElementById('side-ing').classList.add('active'); }
+  if(id === 'bitacora') { document.getElementById('tab-bit').classList.add('active'); document.getElementById('side-bit').classList.add('active'); window.updateBitacora(); }
+  if(id === 'admin') { window.renderAdmin(); }
+};
+
+// --- FIREBASE LISTENERS ---
+document.addEventListener('firebase-ready', () => {
+  const db = window._db;
+  // Escuchar Ingresos
+  window._fbOnValue(window._fbRef(db, 'ingresos'), snap => {
+    _cache.ingresos = snap.exists() ? snap.val() : {};
+    window.updateIngresosUI();
+  });
+  // Escuchar Ajustes
+  window._fbOnValue(window._fbRef(db, 'settings'), snap => {
+    if(snap.exists()) {
+      _cache.settings = snap.val();
+      document.getElementById('complexTitle').textContent = _cache.settings.name;
+      document.getElementById('conf-name').value = _cache.settings.name;
+    }
+  });
+  setTimeout(() => { document.getElementById('splash').classList.add('hide'); document.getElementById('app').style.display='flex'; }, 1000);
+});
+
+// --- AUTENTICACIÓN ---
+window.doLogin = () => {
+  const user = document.getElementById('lg-user').value.trim();
+  const pass = document.getElementById('lg-pass').value.trim();
+
+  if(user === ADMIN_USER && pass === ADMIN_PASS) {
+    CU = { id: user, name: "Admin Maestro", role: "Administrador" };
+    enterApp(true);
+  } else {
+    // Aquí podrías validar contra gv_users en Firebase si implementas registro de guardias
+    window.toast("Credenciales incorrectas");
+  }
+};
+
+function enterApp(isAdmin) {
+  document.getElementById('appHeader').style.display = 'block';
+  document.getElementById('userAvatar').textContent = CU.name.substring(0,2).toUpperCase();
+  document.getElementById('prof-name').textContent = CU.name;
+  document.getElementById('prof-role').textContent = CU.role;
+  if(isAdmin) {
+    document.getElementById('adminNavBtn').style.display = 'block';
+    document.getElementById('adminNavBtnD').style.display = 'block';
+    document.getElementById('adminSideLink').style.display = 'flex';
+  }
+  window.nav('ingresos');
+}
+
+window.doLogout = () => { location.reload(); };
+
+// --- ACCIONES DE SEGURIDAD ---
+window.doRegistrarAcceso = async () => {
+  const nom = document.getElementById('ins-nom').value.trim();
+  const id = document.getElementById('ins-id').value.trim();
+  const des = document.getElementById('ins-des').value.trim();
+  const veh = document.getElementById('ins-veh').value.trim() || "Ninguno";
+  const cat = document.getElementById('ins-cat').value;
+
+  if(!nom || !id || !des) return window.toast("⚠️ Completa los campos obligatorios");
+
+  const data = {
+    categoria: cat,
+    nombre: nom,
+    identificacion: id,
+    destino: des,
+    vehiculo: veh,
+    fechaHora: new Date().toLocaleString('es-VE'),
+    estado: (cat === 'Residente' ? 'Aprobado' : 'Pendiente'), // Residentes pasan directo, otros esperan admin
+    timestamp: Date.now()
+  };
+
+  try {
+    await window._fbPush(window._fbRef(window._db, 'ingresos'), data);
+    window.toast("✅ Registro enviado a la nube");
+    document.getElementById('ins-nom').value = "";
+    document.getElementById('ins-id').value = "";
+    document.getElementById('ins-des').value = "";
+    document.getElementById('ins-veh').value = "";
+  } catch(e) { window.toast("Error al guardar"); }
+};
+
+window.updateIngresosUI = () => {
+  const recent = document.getElementById('recentList');
+  const all = Object.values(_cache.ingresos).sort((a,b) => b.timestamp - a.timestamp);
+  recent.innerHTML = "";
+  all.slice(0, 5).forEach(item => {
+    const badge = item.categoria === 'Residente' ? 'badge-res' : item.categoria === 'Visitante' ? 'badge-vis' : 'badge-tra';
+    recent.innerHTML += `
+      <div class="card" style="margin-bottom:8px; padding:12px; border-left:4px solid var(--cyan);">
+        <div style="display:flex; justify-content:space-between;">
+          <strong>${item.nombre}</strong>
+          <span class="badge ${badge}">${item.categoria}</span>
+        </div>
+        <div style="font-size:11px; color:var(--text2); margin-top:4px;">
+          🏠 Destino: ${item.destino} | 📄 ID: ${item.identificacion}<br>
+          🕒 ${item.fechaHora} | Estatus: <span style="color:var(--cyan)">${item.estado}</span>
+        </div>
+      </div>`;
+  });
+};
+
+window.updateBitacora = () => {
+  const container = document.getElementById('fullBitacora');
+  const search = document.getElementById('search-bit').value.toLowerCase();
+  const all = Object.values(_cache.ingresos).sort((a,b) => b.timestamp - a.timestamp);
+  
+  container.innerHTML = "";
+  const filtered = all.filter(i => i.nombre.toLowerCase().includes(search) || i.identificacion.toLowerCase().includes(search));
+  
+  if(filtered.length === 0) container.innerHTML = '<div class="empty">Sin resultados</div>';
+  
+  filtered.forEach(item => {
+    container.innerHTML += `
+      <div style="background:var(--card2); padding:10px; border-radius:8px; margin-bottom:8px; font-size:12px; border:1px solid var(--border);">
+        <div style="display:flex; justify-content:space-between;">
+            <strong>${item.nombre}</strong>
+            <span style="font-size:9px; color:var(--text3);">${item.fechaHora}</span>
+        </div>
+        <div style="color:var(--text2);">ID: ${item.identificacion} | Destino: ${item.destino} | Vehículo: ${item.vehiculo}</div>
+        <div style="margin-top:5px; font-weight:700; color:${item.estado === 'Aprobado' ? 'var(--green)' : 'var(--warn)'}">${item.estado}</div>
+      </div>`;
+  });
+};
+
+// --- ADMIN ---
+window.renderAdmin = () => {
+  const pendingDiv = document.getElementById('admin-pending');
+  const entries = Object.entries(_cache.ingresos).filter(e => e[1].estado === 'Pendiente');
+  
+  pendingDiv.innerHTML = "";
+  if(entries.length === 0) pendingDiv.innerHTML = '<div class="empty">No hay solicitudes pendientes</div>';
+  
+  entries.forEach(([key, val]) => {
+    pendingDiv.innerHTML += `
+      <div class="card" style="background:var(--bg3);">
+        <strong>${val.nombre}</strong> (${val.categoria})<br>
+        <small>${val.identificacion} -> ${val.destino}</small>
+        <div style="display:flex; gap:10px; margin-top:10px;">
+          <button class="btn btn-sm" onclick="window.decidirAcceso('${key}', 'Aprobado')">Aprobar</button>
+          <button class="btn btn-sm btn-danger" onclick="window.decidirAcceso('${key}', 'Rechazado')">Rechazar</button>
+        </div>
+      </div>`;
+  });
+};
+
+window.decidirAcceso = (key, estado) => {
+  window._fbUpdate(window._fbRef(window._db, 'ingresos/' + key), { estado: estado });
+  window.toast("Estatus actualizado");
+};
+
+window.saveSettings = () => {
+  const name = document.getElementById('conf-name').value;
+  window._fbSet(window._fbRef(window._db, 'settings'), { name: name });
+  window.toast("Ajustes guardados");
+};
+
+// --- EXPORTAR ---
+window.exportCSV = () => {
+  const data = [["Fecha", "Nombre", "ID", "Categoría", "Destino", "Estado"]];
+  Object.values(_cache.ingresos).forEach(i => data.push([i.fechaHora, i.nombre, i.identificacion, i.categoria, i.destino, i.estado]));
+  const csv = data.map(row => row.join(",")).join("\n");
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'Bitacora_LosLagos.csv'; a.click();
+};
+
+window.exportPDF = () => {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.text("REPORTE DE ACCESO - " + _cache.settings.name, 10, 10);
+  const rows = Object.values(_cache.ingresos).map(i => [i.fechaHora, i.nombre, i.identificacion, i.destino, i.estado]);
+  doc.autoTable({ head: [['Fecha', 'Nombre', 'ID', 'Destino', 'Estado']], body: rows });
+  doc.save("Reporte_Seguridad.pdf");
+};
+
+</script>
+</body>
+</html>
