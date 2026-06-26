@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1.0,user-scalable=no">
+<meta name="theme-color" content="#0b0f19">
+<title>Guardia Virtual Pro | Villegas Systems</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, set, push, get, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBpI_jtbEDhZFRESrn1E4kaDLfrLo72910",
+    authDomain: "guardia-virtual-ccf52.firebaseapp.com",
+    projectId: "guardia-virtual-ccf52",
+    storageBucket: "guardia-virtual-ccf52.firebasestorage.app",
+    messagingSenderId: "788405556652",
+    appId: "1:788405556652:web:8f7c4d134ef8e52d2ed609",
+    measurementId: "G-B607QZVWMF",
+    databaseURL: "https://guardia-virtual-ccf52-default-rtdb.firebaseio.com/"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  window._db = db; window._fbRef = ref; window._fbSet = set; window._fbPush = push; window._fbGet = get; window._fbOnValue = onValue; window._fbUpdate = update; window._fbRemove = remove;
+  document.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<style>
+:root {
+  --bg: #0b0f19; --bg2: #111827; --bg3: #1f2937;
+  --card: #131a26; --card2: #1b2333; --card3: #22314a;
+  --cyan: #00f0ff; --cyan-glow: rgba(0, 240, 255, 0.3);
+  --green: #10b981; --warn: #f97316; --danger: #ef4444;
+  --text: #f8fafc; --text2: #94a3b8; --border: rgba(0,240,255,0.1);
+  --r: 14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; }
+body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+/* SPLASH */
+#splash { position: fixed; inset: 0; z-index: 9999; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.5s; }
+#splash.hide { opacity: 0; pointer-events: none; }
+.splash-ball { width: 60px; height: 60px; border-radius: 50%; border: 3px solid transparent; border-top-color: var(--cyan); animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* APP LAYOUT */
+#app { display: none; flex-direction: column; min-height: 100vh; }
+.app-header { background: var(--bg2); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 200; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; }
+.sidebar { width: 240px; border-right: 1px solid var(--border); display: none; padding: 20px 0; background: var(--bg); }
+.main-content { flex: 1; padding: 15px; padding-bottom: 80px; }
+
+/* REUSABLE */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 15px; margin-bottom: 15px; }
+.field { margin-bottom: 15px; position: relative; }
+.field label { display: block; font-size: 11px; color: var(--text2); margin-bottom: 5px; text-transform: uppercase; font-weight: 700; }
+.field input, .field select, .field textarea { width: 100%; padding: 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; color: #fff; outline: none; }
+.field .toggle-pass { position: absolute; right: 12px; top: 32px; cursor: pointer; color: var(--cyan); font-size: 18px; }
+
+.btn { width: 100%; padding: 14px; background: var(--cyan); color: #000; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 13px; }
+.btn-sm { padding: 8px 12px; font-size: 11px; width: auto; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-ghost { background: transparent; border: 1px solid var(--cyan); color: var(--cyan); }
+
+/* MOBILE NAV */
+.mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg2); display: flex; justify-content: space-around; padding: 10px; border-top: 1px solid var(--border); z-index: 500; }
+.nav-item { background: none; border: none; color: var(--text2); font-size: 9px; font-weight: 700; text-transform: uppercase; cursor: pointer; }
+.nav-item.active { color: var(--cyan); }
+
+/* TABLES & LISTS */
+.stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
+.stat-card { background: var(--card2); border-radius: 12px; padding: 10px; text-align: center; border: 1px solid var(--border); }
+.stat-val { font-family: 'Bebas Neue'; font-size: 24px; color: var(--cyan); display: block; }
+.stat-lbl { font-size: 9px; color: var(--text2); text-transform: uppercase; }
+
+.badge { padding: 2px 8px; border-radius: 8px; font-size: 9px; font-weight: 800; }
+.b-vis { background: rgba(0,240,255,0.1); color: var(--cyan); }
+.b-res { background: rgba(16,185,129,0.1); color: var(--green); }
+.b-del { background: rgba(249,115,22,0.1); color: var(--warn); }
+
+#toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--cyan); color: #000; padding: 10px 20px; border-radius: 20px; font-weight: 700; opacity: 0; transition: 0.3s; z-index: 9999; }
+#toast.show { opacity: 1; top: 30px; }
+
+@media(min-width: 768px) {
+    #app-body { display: flex; max-width: 1400px; margin: 0 auto; width: 100%; }
+    .sidebar { display: block; }
+    .mobile-nav { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="splash-ball"></div>
+  <h1 style="font-family:'Bebas Neue'; color:var(--cyan); letter-spacing:3px;">VILLEGAS SYSTEMS</h1>
+</div>
+
+<!-- PANTALLA LOGIN -->
+<section id="screen-login" style="display:flex; flex-direction:column; min-height:100vh; padding:20px; justify-content:center;">
+    <div style="text-align:center; margin-bottom:30px;">
+        <span style="font-size:40px;">🛡️</span>
+        <h1 style="font-family:'Bebas Neue'; font-size:35px; color:var(--cyan);">GUARDIA VIRTUAL PRO</h1>
+        <p style="font-size:10px; color:var(--text2); letter-spacing:2px;">ACCESO RESTRINGIDO A PERSONAL</p>
+    </div>
+
+    <div class="card" style="max-width:400px; margin:0 auto; width:100%;">
+        <div style="display:flex; background:#070a11; padding:4px; border-radius:10px; margin-bottom:20px;">
+            <button class="btn" id="btn-t-log" style="background:var(--cyan); color:#000;" onclick="switchAuth('log')">Entrar</button>
+            <button class="btn btn-ghost" id="btn-t-reg" style="border:none;" onclick="switchAuth('reg')">Registro</button>
+        </div>
+
+        <div id="auth-log">
+            <div class="field"><label>Usuario</label><input id="l-user" type="text" placeholder="Admin2389"></div>
+            <div class="field">
+                <label>Contraseña</label>
+                <input id="l-pass" type="password" placeholder="••••••••">
+                <span class="toggle-pass" onclick="toggleViewPass('l-pass')">👁️</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:15px;">
+                <input type="checkbox" id="l-remember" style="width:18px; height:18px;">
+                <label for="l-remember" style="font-size:12px; color:var(--text2);">Guardar en este equipo</label>
+            </div>
+            <button class="btn" onclick="doLogin()">INICIAR SESIÓN</button>
+        </div>
+
+        <div id="auth-reg" style="display:none;">
+            <div class="field"><label>Nombre Completo</label><input id="r-name" type="text"></div>
+            <div class="field"><label>Usuario Deseado</label><input id="r-user" type="text"></div>
+            <div class="field"><label>Correo</label><input id="r-email" type="email"></div>
+            <div class="field"><label>Rol</label>
+                <select id="r-role">
+                    <option value="Oficial de Seguridad">Oficial de Seguridad</option>
+                    <option value="Supervisor de lo Virtual">Supervisor de lo Virtual</option>
+                    <option value="Administrador del Complejo">Administrador del Complejo</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Clave</label>
+                <input id="r-pass" type="password">
+                <span class="toggle-pass" onclick="toggleViewPass('r-pass')">👁️</span>
+            </div>
+            <button class="btn" onclick="doRegister()">ENVIAR SOLICITUD</button>
+        </div>
+    </div>
+</section>
+
+<!-- APP PRINCIPAL -->
+<div id="app">
+    <header class="app-header">
+        <div style="font-family:'Bebas Neue'; color:var(--cyan); font-size:18px;">🛡️ VILLEGAS SYSTEMS</div>
+        <div style="font-size:10px; font-weight:700; text-align:right;" id="user-info">Cargando...</div>
+    </header>
+
+    <div id="app-body">
+        <aside class="sidebar">
+            <button class="sb-link" onclick="nav('ingresos')">📝 Registro de Visitas</button>
+            <button class="sb-link" onclick="nav('censo')">🏠 Censo de Residentes</button>
+            <button class="sb-link" onclick="nav('stats')">📊 Estadísticas</button>
+            <button class="sb-link" onclick="nav('admin')" id="side-admin" style="display:none;">⚙️ Administración</button>
+            <button class="sb-link" onclick="logout()" style="color:var(--danger); margin-top:20px;">🚪 Salir de Turno</button>
+        </aside>
+
+        <main class="main-content">
+            <!-- PANTALLA: REGISTRO DE VISITAS -->
+            <div id="v-ingresos" class="screen">
+                <div class="sec-head">Registro de Entrada</div>
+                <div class="card">
+                    <div class="field"><label>Seleccionar Casa (Lagos 01-200)</label>
+                        <select id="v-casa" onchange="loadResidentInfo()">
+                            <option value="">Seleccione...</option>
+                            <!-- JS genera las 200 casas -->
+                        </select>
+                    </div>
+                    <div id="resident-preview" class="info-box" style="display:none; margin-bottom:15px; font-size:12px; background:var(--bg2); padding:10px; border-radius:8px; border-left:4px solid var(--cyan);">
+                        <!-- Info automática -->
+                    </div>
+                    <div class="field"><label>Categoría de Visita</label>
+                        <select id="v-cat">
+                            <option value="Visita Autorizada">Autorizada por Residente</option>
+                            <option value="Personal Autorizado">Personal Fijo de Casa</option>
+                            <option value="Delivery / Encomienda">Delivery / Servicios</option>
+                            <option value="Ranger de Seguridad">Ranger / Patrullaje</option>
+                            <option value="Administración">Complejo / Adm.</option>
+                        </select>
+                    </div>
+                    <div class="field"><label>Nombre del Visitante</label><input id="v-nom" type="text"></div>
+                    <div class="field"><label>Cédula</label><input id="v-id" type="text"></div>
+                    <div class="field"><label>Vehículo / Placa</label><input id="v-veh" type="text" placeholder="Ej: ABC123"></div>
+                    <button class="btn" onclick="saveVisita()">REGISTRAR INGRESO</button>
+                </div>
+                <div class="card">
+                    <div class="card-title">Buscador Rápido</div>
+                    <input type="text" id="v-search" placeholder="🔍 Casa, Nombre o ID..." oninput="renderIngresos()" style="width:100%; padding:10px; background:var(--bg2); border:none; border-radius:8px; color:#fff;">
+                    <div id="list-ingresos" style="margin-top:15px;"></div>
+                </div>
+            </div>
+
+            <!-- PANTALLA: CENSO (ADMIN/SUPERVISOR) -->
+            <div id="v-censo" class="screen">
+                <div class="sec-head">Censo Residencial</div>
+                <div class="card">
+                    <div class="field"><label>Número de Casa</label><input id="c-casa" type="text" placeholder="Lagos 01"></div>
+                    <div class="field"><label>Residentes (Hasta 2 nombres)</label><textarea id="c-nombres" placeholder="Juan y Maria"></textarea></div>
+                    <div class="field"><label>Teléfonos (Hasta 2)</label><input id="c-tels" type="text"></div>
+                    <div class="field"><label>Personal Autorizado Fijo</label><textarea id="c-personal" placeholder="Nombre - Cargo"></textarea></div>
+                    <button class="btn" onclick="saveResident()">GUARDAR DATOS DE CASA</button>
+                </div>
+            </div>
+
+            <!-- PANTALLA: ESTADÍSTICAS Y REPORTES -->
+            <div id="v-stats" class="screen">
+                <div class="sec-head">Reportes y Estadísticas</div>
+                <div class="stat-grid">
+                    <div class="stat-card"><span class="stat-val" id="st-total">0</span><span class="stat-lbl">Entradas Hoy</span></div>
+                    <div class="stat-card"><span class="stat-val" id="st-del">0</span><span class="stat-lbl">Deliverys</span></div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Generar Reporte PDF</div>
+                    <div class="field"><label>Filtrar por Casa</label><input type="text" id="rep-casa" placeholder="Todas"></div>
+                    <div class="field"><label>Fecha específica</label><input type="date" id="rep-fecha"></div>
+                    <button class="btn btn-ghost" onclick="generateReport()">DESCARGAR REPORTE PDF</button>
+                </div>
+            </div>
+
+            <!-- PANTALLA: ADMIN (USUARIOS) -->
+            <div id="v-admin" class="screen">
+                <div class="sec-head">Gestión de Personal</div>
+                <div id="admin-user-list"></div>
+            </div>
+        </main>
+    </div>
+
+    <nav class="mobile-nav">
+        <button class="nav-item" onclick="nav('ingresos')">Entradas</button>
+        <button class="nav-item" onclick="nav('censo')">Censo</button>
+        <button class="nav-item" onclick="nav('stats')">Stats</button>
+        <button class="nav-item" onclick="nav('admin')" id="nav-admin" style="display:none;">Personal</button>
+    </nav>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const MASTER_USER = "admin2389";
+const MASTER_PASS = "admin123";
+let CU = null;
+let _cache = { ingresos: {}, residents: {}, users: {} };
+
+window.toast = (m) => { const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); };
+window.toggleViewPass = (id) => { const el = document.getElementById(id); el.type = el.type === 'password' ? 'text' : 'password'; };
+
+window.switchAuth = (t) => {
+    document.getElementById('auth-log').style.display = t==='log'?'block':'none';
+    document.getElementById('auth-reg').style.display = t==='reg'?'block':'none';
+    document.getElementById('btn-t-log').style.background = t==='log'?'var(--cyan)':'transparent';
+    document.getElementById('btn-t-log').style.color = t==='log'?'#000':'var(--text2)';
+    document.getElementById('btn-t-reg').style.background = t==='reg'?'var(--cyan)':'transparent';
+    document.getElementById('btn-t-reg').style.color = t==='reg'?'#000':'var(--text2)';
+};
+
+window.nav = (id) => {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('v-' + id).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    if(id === 'ingresos') renderIngresos();
+    if(id === 'admin') renderAdminUsers();
+};
+
+// --- FIREBASE CORE ---
+document.addEventListener('firebase-ready', () => {
+    const db = window._db;
+    
+    // Censo 01-200 automático en select
+    const sel = document.getElementById('v-casa');
+    for(let i=1; i<=200; i++) {
+        let num = i < 10 ? '0' + i : i;
+        let opt = document.createElement('option');
+        opt.value = 'Lagos ' + num; opt.textContent = 'Lagos ' + num;
+        sel.appendChild(opt);
+    }
+
+    // Listeners
+    window._fbOnValue(window._fbRef(db, 'ingresos'), snap => { _cache.ingresos = snap.val() || {}; renderIngresos(); updateStats(); });
+    window._fbOnValue(window._fbRef(db, 'residents'), snap => { _cache.residents = snap.val() || {}; });
+    window._fbOnValue(window._fbRef(db, 'gv_users'), snap => { _cache.users = snap.val() || {}; if(CU) renderAdminUsers(); });
+
+    // Auto-Login
+    const saved = localStorage.getItem('gv_remember');
+    if(saved) {
+        const data = JSON.parse(saved);
+        doLogin(data.u, data.p, true);
+    }
+
+    setTimeout(() => document.getElementById('splash').classList.add('hide'), 1000);
+});
+
+// --- AUTH ---
+window.doLogin = (user, pass, auto = false) => {
+    const u = user || document.getElementById('log-user').value.trim();
+    const p = pass || document.getElementById('log-pass').value.trim();
+    const rem = document.getElementById('l-remember').checked;
+
+    if(u === MASTER_USER && p === MASTER_PASS) {
+        CU = { name: "ADMIN MAESTRO", role: "Administrador del Complejo", isAdmin: true };
+    } else if(_cache.users[u] && _cache.users[u].pass === p) {
+        if(!_cache.users[u].approved) return window.toast("⏳ Acceso pendiente de aprobación");
+        CU = { ..._cache.users[u], id: u, isAdmin: false };
+    } else {
+        return window.toast("❌ Error de credenciales");
+    }
+
+    if(rem && !auto) localStorage.setItem('gv_remember', JSON.stringify({u, p}));
+    startApp();
+};
+
+window.doRegister = async () => {
+    const u = document.getElementById('r-user').value.trim();
+    const n = document.getElementById('r-name').value.trim();
+    const p = document.getElementById('r-pass').value.trim();
+    const r = document.getElementById('r-role').value;
+    const e = document.getElementById('r-email').value;
+
+    if(!u || !p) return window.toast("⚠️ Rellena campos clave");
+    await window._fbSet(window._fbRef(window._db, 'gv_users/' + u), { name: n, pass: p, role: r, email: e, approved: false });
+    window.toast("✅ Solicitud enviada al Administrador");
+    switchAuth('log');
+};
+
+function startApp() {
+    document.getElementById('screen-login').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('user-info').innerHTML = `${CU.name}<br><span style="color:var(--cyan)">${CU.role}</span>`;
+    
+    if(CU.isAdmin || CU.role === "Administrador del Complejo") {
+        document.getElementById('side-admin').style.display = 'block';
+        document.getElementById('nav-admin').style.display = 'block';
+        nav('admin');
+    } else {
+        nav('ingresos');
+    }
+}
+
+window.logout = () => { localStorage.removeItem('gv_remember'); location.reload(); };
+
+// --- OPERACIONES ---
+window.loadResidentInfo = () => {
+    const casa = document.getElementById('v-casa').value;
+    const box = document.getElementById('resident-preview');
+    if(!casa || !_cache.residents[casa]) { box.style.display='none'; return; }
+    const r = _cache.residents[casa];
+    box.innerHTML = `<strong>Residentes:</strong> ${r.nombres}<br><strong>Fijos:</strong> ${r.personal || 'No registrados'}`;
+    box.style.display = 'block';
+};
+
+window.saveResident = async () => {
+    const casa = document.getElementById('c-casa').value.trim();
+    if(!casa) return window.toast("⚠️ Indica la casa");
+    const data = {
+        nombres: document.getElementById('c-nombres').value,
+        tels: document.getElementById('c-tels').value,
+        personal: document.getElementById('c-personal').value
+    };
+    await window._fbUpdate(window._fbRef(window._db, 'residents/'+casa), data);
+    window.toast("✅ Censo Actualizado");
+};
+
+window.saveVisita = async () => {
+    const casa = document.getElementById('v-casa').value;
+    const nom = document.getElementById('v-nom').value.trim();
+    if(!casa || !nom) return window.toast("⚠️ Casa y Nombre obligatorios");
+
+    const entry = {
+        casa, nom, id: document.getElementById('v-id').value,
+        cat: document.getElementById('v-cat').value,
+        veh: document.getElementById('v-veh').value || "Ninguno",
+        guardia: CU.name,
+        ts: Date.now(),
+        fecha: new Date().toLocaleDateString(),
+        hora: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+    };
+
+    await window._fbPush(window._fbRef(window._db, 'ingresos'), entry);
+    window.toast("✅ Entrada Registrada");
+    ['v-nom','v-id','v-veh'].forEach(id => document.getElementById(id).value="");
+};
+
+function renderIngresos() {
+    const c = document.getElementById('list-ingresos');
+    const q = document.getElementById('v-search').value.toLowerCase();
+    const all = Object.values(_cache.ingresos).sort((a,b) => b.ts - a.ts);
+    c.innerHTML = "";
+    all.filter(i => i.nom.toLowerCase().includes(q) || i.casa.toLowerCase().includes(q) || i.id.includes(q)).forEach(i => {
+        c.innerHTML += `
+            <div class="card" style="font-size:12px; border-left:4px solid var(--cyan);">
+                <div style="display:flex; justify-content:space-between;">
+                    <strong>${i.nom}</strong>
+                    <span class="badge b-vis">${i.cat}</span>
+                </div>
+                <p style="color:var(--text2); margin-top:5px;">🏠 ${i.casa} | 📄 ID: ${i.id} | 🚗 ${i.veh}</p>
+                <div style="font-size:10px; color:var(--text3); margin-top:5px;">🕒 ${i.fecha} ${i.hora} • Guardia: ${i.guardia}</div>
+            </div>`;
+    });
+}
+
+function renderAdminUsers() {
+    const c = document.getElementById('admin-user-list');
+    c.innerHTML = "";
+    Object.entries(_cache.users).forEach(([id, u]) => {
+        c.innerHTML += `
+            <div class="card" style="background:var(--bg2);">
+                <div style="display:flex; justify-content:space-between;">
+                    <strong>${u.name} (@${id})</strong>
+                    <span class="badge ${u.approved?'b-res':'b-del'}">${u.approved?'ACTIVO':'PENDIENTE'}</span>
+                </div>
+                <p style="font-size:11px; color:var(--cyan); margin:5px 0;">Clave: ${u.pass} | Rol: ${u.role}</p>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button class="btn btn-sm" onclick="approveUser('${id}', true)">Aprobar</button>
+                    <button class="btn btn-sm btn-danger" onclick="approveUser('${id}', false)">Eliminar</button>
+                </div>
+            </div>`;
+    });
+}
+
+window.approveUser = async (id, stat) => {
+    if(stat) await window._fbUpdate(window._fbRef(window._db, 'gv_users/'+id), {approved: true});
+    else await window._fbRemove(window._fbRef(window._db, 'gv_users/'+id));
+    window.toast("Estatus de personal actualizado");
+};
+
+function updateStats() {
+    const entries = Object.values(_cache.ingresos);
+    const hoy = new Date().toLocaleDateString();
+    const hoyEntries = entries.filter(e => e.fecha === hoy);
+    document.getElementById('st-total').textContent = hoyEntries.length;
+    document.getElementById('st-del').textContent = hoyEntries.filter(e => e.cat.includes("Delivery")).length;
+}
+
+// --- REPORTES PDF ---
+window.generateReport = () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const house = document.getElementById('rep-casa').value.trim();
+    const date = document.getElementById('rep-fecha').value;
+    
+    let filtered = Object.values(_cache.ingresos);
+    if(house) filtered = filtered.filter(i => i.casa.includes(house));
+    // Conversión de fecha input a locale para comparar
+    if(date) {
+        const dStr = new Date(date).toLocaleDateString();
+        filtered = filtered.filter(i => i.fecha === dStr);
+    }
+
+    doc.setFontSize(16);
+    doc.text("REPORTE DE ACCESOS - VILLEGAS SYSTEMS", 15, 20);
+    doc.setFontSize(10);
+    doc.text(`Filtro: Casa(${house||'Todas'}) - Fecha(${date||'Siempre'})`, 15, 28);
+
+    const rows = filtered.map(i => [i.fecha, i.hora, i.casa, i.nom, i.cat, i.veh, i.guardia]);
+    doc.autoTable({
+        startY: 35,
+        head: [['Fecha', 'Hora', 'Casa', 'Nombre', 'Categoría', 'Vehículo', 'Guardia']],
+        body: rows,
+        theme: 'grid',
+        headStyles: { fillColor: [0, 240, 255], textColor: [0,0,0] }
+    });
+
+    doc.save(`Reporte_LosLagos_${Date.now()}.pdf`);
+};
+
+</script>
+</body>
+</html>
