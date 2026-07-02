@@ -49,6 +49,32 @@
   </script>
 
   <style>
+    /* ====== RESPONSIVE: TV / Pantallas grandes ====== */
+    @media (min-width: 1400px) {
+      html { font-size: 18px; }
+      .nav-tab { padding: 16px 24px; font-size: 13px; }
+      .card-item { padding: 18px 22px; font-size: 14px; }
+      .inp { padding: 14px 18px; font-size: 15px; }
+      .btn-g, .btn-dark { padding: 16px; font-size: 15px; }
+      .lbl { font-size: 12px; }
+    }
+
+    @media (min-width: 1900px) {
+      html { font-size: 22px; }
+    }
+
+    /* ====== RESPONSIVE: Tablets / horizontal ====== */
+    @media (max-width: 768px) {
+      .nav-tab { padding: 10px 10px; font-size: 10px; gap: 4px; }
+      .nav-tab svg { width: 14px; height: 14px; }
+    }
+
+    @media (max-width: 480px) {
+      html { font-size: 14px; }
+      .nav-tab { padding: 8px 6px; font-size: 9px; gap: 3px; letter-spacing: 0.04em; }
+      .nav-tab svg { width: 12px; height: 12px; }
+    }
+
     /* Estilos globales y scrollbars */
     ::-webkit-scrollbar {
       width: 6px;
@@ -326,14 +352,14 @@
 </head>
 
 <body
-  class="bg-slate-100 flex justify-center items-center min-h-screen md:p-6 text-slate-800 selection:bg-brand-emeraldLight selection:text-brand-emerald">
+  class="bg-slate-100 flex justify-center items-center min-h-screen p-0 md:p-3 lg:p-4 text-slate-800 selection:bg-brand-emeraldLight selection:text-brand-emerald">
 
   <!-- Contenedor del Toast -->
   <div id="toast"></div>
 
   <!-- Contenedor Principal Adaptable (Mobile-First h-screen, Desktop Card) -->
   <div
-    class="w-full max-w-6xl bg-white md:rounded-[24px] shadow-xl overflow-hidden flex flex-col relative h-[100dvh] md:h-[88vh] md:max-h-[900px] border border-slate-200">
+    class="w-full bg-white md:rounded-[24px] shadow-xl overflow-hidden flex flex-col relative h-[100dvh] border border-slate-200 max-w-full md:max-w-[98vw] lg:max-w-[95vw] xl:max-w-[90vw] 2xl:max-w-[1600px] md:h-[96vh] md:max-h-none">
 
     <!-- ===================== LOGIN SCREEN ===================== -->
     <div id="login" class="h-full flex flex-col justify-center items-center p-8 text-center" style="background:#050e0c">
@@ -1804,80 +1830,151 @@
       turno = t;
 
       document.getElementById('login').classList.add('hidden');
-      document.getElementById('loadingScreen').classList.remove('hidden');
+      document.getElementById('loadingScreen').classList.add('hidden');
+      document.getElementById('app').classList.remove('hidden');
 
-      // Verificar conexión a Firebase
-      const checkRef = database.ref('.info/connected');
-      checkRef.once('value', snap => {
-        if (snap.val() === true) {
-          console.log('✅ Firebase conectado exitosamente');
-        } else {
-          console.warn('⚠️ Firebase sin conexión');
-          toastError('⚠️ Firebase sin conexión. Verifica Internet.');
-        }
-      }).catch(err => {
-        console.error('Error verificando conexión Firebase:', err);
-      });
+      const ahora = new Date();
+      const fechaTexto = ahora.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-      // Registrar Presencia Activa en Firebase
-      const safeName = g.replace(/[.$#[\]]/g, "_");
-      presenceRef = database.ref('presencia/' + safeName);
-      presenceRef.set({
-        nombre: g,
-        turno: t,
-        conectado: true,
-        ultimaConexion: firebase.database.ServerValue.TIMESTAMP
-      }).catch(err => {
-        console.error("Error al registrar presencia:", err);
-      });
-      presenceRef.onDisconnect().remove();
+      document.getElementById('infoTurno').innerHTML = `
+        <div class="flex items-center gap-1.5">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          <span class="font-medium text-slate-300">${fechaTexto}</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="bg-[#0f2d24] px-2 py-0.5 rounded border border-[#14352a] text-[#87af9a] text-[10px] font-bold uppercase tracking-wider">Turno ${t}</span>
+          <span class="text-slate-300 font-semibold flex items-center gap-1">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            ${g}
+          </span>
+        </div>
+      `;
 
-      // Escuchar presencia de otros guardias
-      database.ref('presencia').on('value', snapshot => {
-        const oficialesConectados = [];
-        snapshot.forEach(child => {
-          const val = child.val();
-          if (val && val.nombre) {
-            oficialesConectados.push(val.nombre);
-          }
-        });
-        const el = document.getElementById('header_conectados');
-        if (el) el.innerText = oficialesConectados.length ? oficialesConectados.join(', ') : 'Ninguno';
-      });
+      document.getElementById('oficialLabel').innerText = g;
+      document.getElementById('turnoLabel').innerText = t;
+      document.getElementById('fechaLabel').innerText = ahora.toLocaleDateString('es-ES');
+      document.getElementById('header_oficial').innerText = g;
+      document.getElementById('header_turno').innerText = `Turno ${t}`;
 
+      mostrar('registrar');
+      toast(`👋 Bienvenido, ${g}`);
       iniciarReloj();
-      inicializarBaseDeDatos();
 
+      // Todo lo de Firebase en segundo plano
       setTimeout(() => {
-        document.getElementById('loadingScreen').classList.add('hidden');
-        document.getElementById('app').classList.remove('hidden');
+        try {
+          database.ref('.info/connected').once('value', snap => {
+            if (snap.val() === true) {
+              console.log('✅ Firebase conectado');
+            } else {
+              toastError('⚠️ Sin conexión a Firebase.');
+            }
+          }).catch(() => {});
 
-        const ahora = new Date();
-        const fechaTexto = ahora.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+          const safeName = g.replace(/[.$#[\]]/g, "_");
+          presenceRef = database.ref('presencia/' + safeName);
+          presenceRef.set({ nombre: g, turno: t, conectado: true, ultimaConexion: firebase.database.ServerValue.TIMESTAMP }).catch(() => {});
+          presenceRef.onDisconnect().remove();
 
-        document.getElementById('infoTurno').innerHTML = `
-          <div class="flex items-center gap-1.5">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-            <span class="font-medium text-slate-300">${fechaTexto}</span>
-          </div>
-          <div class="flex items-center gap-3">
-            <span class="bg-[#0f2d24] px-2 py-0.5 rounded border border-[#14352a] text-[#87af9a] text-[10px] font-bold uppercase tracking-wider">Turno ${t}</span>
-            <span class="text-slate-300 font-semibold flex items-center gap-1">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-              ${g}
-            </span>
-          </div>
-        `;
+          database.ref('presencia').on('value', snapshot => {
+            const oficialesConectados = [];
+            snapshot.forEach(child => {
+              if (child.val() && child.val().nombre) oficialesConectados.push(child.val().nombre);
+            });
+            const el = document.getElementById('header_conectados');
+            if (el) el.innerText = oficialesConectados.length ? oficialesConectados.join(', ') : 'Ninguno';
+          });
 
-        document.getElementById('oficialLabel').innerText = g;
-        document.getElementById('turnoLabel').innerText = t;
-        document.getElementById('fechaLabel').innerText = ahora.toLocaleDateString('es-ES');
-        document.getElementById('header_oficial').innerText = g;
-        document.getElementById('header_turno').innerText = `Turno ${t}`;
+          inicializarBaseDeDatos();
+        } catch (e) {
+          console.error('Error Firebase:', e);
+        }
+      }, 100);
+    }
 
-        mostrar('registrar');
-        toast(`👋 Bienvenido, ${g}`);
-      }, 1000);
+    // ── INICIALIZAR BASE DE DATOS (FIREBASE LISTENERS) ──
+    function inicializarBaseDeDatos() {
+      // 1. Escuchar Visitas
+      database.ref('visitas').on('value', snapshot => {
+        try {
+          visitas = [];
+          snapshot.forEach(child => {
+            visitas.push({ id: child.key, ...child.val() });
+          });
+          visitas.sort((a, b) => obtenerFechaObjeto(b) - obtenerFechaObjeto(a));
+          calcularInteraccionesSugeridas();
+          render();
+        } catch (e) { console.error('Error en visitas listener:', e); }
+      }, err => {
+        console.error("Error cargando visitas:", err);
+        toastError('Error al cargar visitas de Firebase: ' + (err.message || err));
+      });
+
+      // 2. Escuchar Residentes
+      database.ref('residentes').on('value', snapshot => {
+        try {
+          residentes = [];
+          snapshot.forEach(child => {
+            residentes.push({ id: child.key, ...child.val() });
+          });
+          residentes.sort((a, b) => a.lago.localeCompare(b.lago, undefined, { numeric: true }));
+          actualizarCasas();
+          renderResidentes();
+        } catch (e) { console.error('Error en residentes listener:', e); }
+      });
+
+      // 3. Escuchar Familiares
+      database.ref('familiares').on('value', snapshot => {
+        try {
+          familiares = [];
+          snapshot.forEach(child => {
+            familiares.push({ id: child.key, ...child.val() });
+          });
+          familiares.sort((a, b) => a.casa.localeCompare(b.casa, undefined, { numeric: true }));
+          renderFamiliares();
+        } catch (e) { console.error('Error en familiares listener:', e); }
+      });
+
+      // 4. Escuchar Personal
+      database.ref('personal').on('value', snapshot => {
+        try {
+          personal = [];
+          snapshot.forEach(child => {
+            personal.push({ id: child.key, ...child.val() });
+          });
+          personal.sort((a, b) => (a.casa || '').localeCompare(b.casa || '', undefined, { numeric: true }));
+          renderPersonal();
+        } catch (e) { console.error('Error en personal listener:', e); }
+      });
+
+      // 5. Escuchar Historial de Reportes
+      database.ref('reportes').on('value', snapshot => {
+        try {
+          reportes = [];
+          snapshot.forEach(child => {
+            reportes.unshift({ id: child.key, ...child.val() });
+          });
+          renderReportes();
+        } catch (e) { console.error('Error en reportes listener:', e); }
+      });
+    }
+
+    function mostrar(pestana) {
+      ['registrar', 'visitas', 'estadisticas', 'reportes', 'residentes', 'familiares', 'personal'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+        const b = document.getElementById('btn_' + id);
+        if (b) b.className = "nav-tab";
+      });
+      document.getElementById(pestana).classList.remove('hidden');
+      const b = document.getElementById('btn_' + pestana);
+      if (b) b.className = "nav-tab active";
+      if (pestana === 'registrar') actualizarCampos();
+      if (pestana === 'visitas') render();
+      if (pestana === 'estadisticas') render();
+      if (pestana === 'reportes') renderReportes();
+      if (pestana === 'residentes') renderResidentes();
+      if (pestana === 'familiares') { actualizarCasasFamiliares(); renderFamiliares(); }
+      if (pestana === 'personal') { selPersonalTipo('casa'); renderPersonal(); }
     }
 
     function cerrarSesion() {
@@ -2427,6 +2524,24 @@
       });
 
       actualizarTablaHoras(datosHoras, totalTurnoActual);
+    }
+
+    function obtenerDatosGraficaHoras() {
+      const hoyStr = new Date().toLocaleDateString('es-ES');
+      const horas = {};
+      for (let i = 0; i < 24; i++) horas[i] = 0;
+      visitas.forEach(v => {
+        if (v.fecha === hoyStr && v.turno === turno && v.horaNum !== undefined) {
+          horas[v.horaNum] = (horas[v.horaNum] || 0) + 1;
+        }
+      });
+      const labels = [], data = [];
+      for (let i = 0; i < 24; i++) {
+        const h = String(i).padStart(2, '0');
+        labels.push(`${h}:00 - ${h}:59`);
+        data.push(horas[i]);
+      }
+      return { labels, data };
     }
 
     function actualizarTablaHoras(datosHoras, totalIngresos) {
