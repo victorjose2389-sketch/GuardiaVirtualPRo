@@ -1885,6 +1885,66 @@ A continuación, presento el archivo `index.html` completo con todas las funcion
       }, 1000);
     }
 
+    // ── INICIALIZAR BASE DE DATOS (FIREBASE LISTENERS) ──
+    function inicializarBaseDeDatos() {
+      // 1. Escuchar Visitas
+      database.ref('visitas').on('value', snapshot => {
+        visitas = [];
+        snapshot.forEach(child => {
+          visitas.push({ id: child.key, ...child.val() });
+        });
+
+        // Ordenar las visitas de la más reciente a la más antigua
+        visitas.sort((a, b) => obtenerFechaObjeto(b) - obtenerFechaObjeto(a));
+
+        calcularInteraccionesSugeridas();
+        render();
+      }, err => {
+        console.error("Error cargando visitas:", err);
+        toastError('Error al cargar visitas de Firebase: ' + (err.message || err));
+      });
+
+      // 2. Escuchar Residentes
+      database.ref('residentes').on('value', snapshot => {
+        residentes = [];
+        snapshot.forEach(child => {
+          residentes.push({ id: child.key, ...child.val() });
+        });
+        residentes.sort((a, b) => a.lago.localeCompare(b.lago, undefined, { numeric: true }));
+        actualizarCasas();
+        renderResidentes();
+      });
+
+      // 3. Escuchar Familiares
+      database.ref('familiares').on('value', snapshot => {
+        familiares = [];
+        snapshot.forEach(child => {
+          familiares.push({ id: child.key, ...child.val() });
+        });
+        familiares.sort((a, b) => a.casa.localeCompare(b.casa, undefined, { numeric: true }));
+        renderFamiliares();
+      });
+
+      // 4. Escuchar Personal
+      database.ref('personal').on('value', snapshot => {
+        personal = [];
+        snapshot.forEach(child => {
+          personal.push({ id: child.key, ...child.val() });
+        });
+        personal.sort((a, b) => (a.casa || '').localeCompare(b.casa || '', undefined, { numeric: true }));
+        renderPersonal();
+      });
+
+      // 5. Escuchar Historial de Reportes
+      database.ref('reportes').on('value', snapshot => {
+        reportes = [];
+        snapshot.forEach(child => {
+          reportes.unshift({ id: child.key, ...child.val() });
+        });
+        renderReportes();
+      });
+    }
+
     function cerrarSesion() {
       if (presenceRef) {
         presenceRef.remove();
