@@ -1,0 +1,15 @@
+{
+  "background_color": "#ffffff",
+  "dir": "auto",
+  "display": "standalone",
+  "name": "Guardia Virtual Pro",
+  "orientation": "any",
+  "scope": "Scope: /GuardiaVirtualPro/",
+  "short_name": "Guardia Prorjose2389-sketch.github",
+  "start_url": "Start URL: /GuardiaVirtualPro/ Scope: /GuardiaVirtualPro/",
+  "theme_color": "#ffffff",
+  "id": "guardia-virtual-pro",
+  "description": "Sistema de control de acceso residencial.",
+  "prefer_related_applications": true,
+  "lang": "es"
+}
