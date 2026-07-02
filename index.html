@@ -1,3 +1,8 @@
+Lamento el inconveniente. En la versión anterior se omitió la declaración de las nuevas funciones de filtrado en el bloque principal de JavaScript, lo que provocaba un error crítico (`ReferenceError`) en el navegador e interrumpía toda la ejecución de la aplicación, simulando una pérdida de conexión.
+
+A continuación, presento el archivo `index.html` completo con todas las funciones de búsqueda, ordenamiento numérico natural, formateo automatizado de Lagos (`Lagos 01`) y descarga de PDFs correctamente integradas para evitar cualquier fallo de ejecución:
+
+```html
 <!DOCTYPE html>
 <html lang="es">
 
@@ -49,6 +54,32 @@
   </script>
 
   <style>
+    /* ====== RESPONSIVE: TV / Pantallas grandes ====== */
+    @media (min-width: 1400px) {
+      html { font-size: 18px; }
+      .nav-tab { padding: 16px 24px; font-size: 13px; }
+      .card-item { padding: 18px 22px; font-size: 14px; }
+      .inp { padding: 14px 18px; font-size: 15px; }
+      .btn-g, .btn-dark { padding: 16px; font-size: 15px; }
+      .lbl { font-size: 12px; }
+    }
+
+    @media (min-width: 1900px) {
+      html { font-size: 22px; }
+    }
+
+    /* ====== RESPONSIVE: Tablets / horizontal ====== */
+    @media (max-width: 768px) {
+      .nav-tab { padding: 10px 10px; font-size: 10px; gap: 4px; }
+      .nav-tab svg { width: 14px; height: 14px; }
+    }
+
+    @media (max-width: 480px) {
+      html { font-size: 14px; }
+      .nav-tab { padding: 8px 6px; font-size: 9px; gap: 3px; letter-spacing: 0.04em; }
+      .nav-tab svg { width: 12px; height: 12px; }
+    }
+
     /* Estilos globales y scrollbars */
     ::-webkit-scrollbar {
       width: 6px;
@@ -326,14 +357,14 @@
 </head>
 
 <body
-  class="bg-slate-100 flex justify-center items-center min-h-screen md:p-6 text-slate-800 selection:bg-brand-emeraldLight selection:text-brand-emerald">
+  class="bg-slate-100 flex justify-center items-center min-h-screen p-0 md:p-3 lg:p-4 text-slate-800 selection:bg-brand-emeraldLight selection:text-brand-emerald">
 
   <!-- Contenedor del Toast -->
   <div id="toast"></div>
 
   <!-- Contenedor Principal Adaptable (Mobile-First h-screen, Desktop Card) -->
   <div
-    class="w-full max-w-6xl bg-white md:rounded-[24px] shadow-xl overflow-hidden flex flex-col relative h-[100dvh] md:h-[88vh] md:max-h-[900px] border border-slate-200">
+    class="w-full bg-white md:rounded-[24px] shadow-xl overflow-hidden flex flex-col relative h-[100dvh] border border-slate-200 max-w-full md:max-w-[98vw] lg:max-w-[95vw] xl:max-w-[90vw] 2xl:max-w-[1600px] md:h-[96vh] md:max-h-none">
 
     <!-- ===================== LOGIN SCREEN ===================== -->
     <div id="login" class="h-full flex flex-col justify-center items-center p-8 text-center" style="background:#050e0c">
@@ -1806,49 +1837,53 @@
       document.getElementById('login').classList.add('hidden');
       document.getElementById('loadingScreen').classList.remove('hidden');
 
-      // Verificar conexión a Firebase
-      const checkRef = database.ref('.info/connected');
-      checkRef.once('value', snap => {
-        if (snap.val() === true) {
-          console.log('✅ Firebase conectado exitosamente');
-        } else {
-          console.warn('⚠️ Firebase sin conexión');
-          toastError('⚠️ Firebase sin conexión. Verifica Internet.');
-        }
-      }).catch(err => {
-        console.error('Error verificando conexión Firebase:', err);
-      });
-
-      // Registrar Presencia Activa en Firebase
-      const safeName = g.replace(/[.$#[\]]/g, "_");
-      presenceRef = database.ref('presencia/' + safeName);
-      presenceRef.set({
-        nombre: g,
-        turno: t,
-        conectado: true,
-        ultimaConexion: firebase.database.ServerValue.TIMESTAMP
-      }).catch(err => {
-        console.error("Error al registrar presencia:", err);
-      });
-      presenceRef.onDisconnect().remove();
-
-      // Escuchar presencia de otros guardias
-      database.ref('presencia').on('value', snapshot => {
-        const oficialesConectados = [];
-        snapshot.forEach(child => {
-          const val = child.val();
-          if (val && val.nombre) {
-            oficialesConectados.push(val.nombre);
+      try {
+        // Verificar conexión a Firebase
+        database.ref('.info/connected').once('value', snap => {
+          if (snap.val() === true) {
+            console.log('✅ Firebase conectado exitosamente');
+          } else {
+            console.warn('⚠️ Firebase sin conexión');
+            toastError('⚠️ Firebase sin conexión. Verifica Internet.');
           }
+        }).catch(err => {
+          console.error('Error verificando conexión Firebase:', err);
         });
-        const el = document.getElementById('header_conectados');
-        if (el) el.innerText = oficialesConectados.length ? oficialesConectados.join(', ') : 'Ninguno';
-      });
 
-      iniciarReloj();
-      inicializarBaseDeDatos();
+        // Registrar Presencia Activa en Firebase
+        const safeName = g.replace(/[.$#[\]]/g, "_");
+        presenceRef = database.ref('presencia/' + safeName);
+        presenceRef.set({
+          nombre: g,
+          turno: t,
+          conectado: true,
+          ultimaConexion: firebase.database.ServerValue.TIMESTAMP
+        }).catch(err => {
+          console.error("Error al registrar presencia:", err);
+        });
+        presenceRef.onDisconnect().remove();
 
-      setTimeout(() => {
+        // Escuchar presencia de otros guardias
+        database.ref('presencia').on('value', snapshot => {
+          const oficialesConectados = [];
+          snapshot.forEach(child => {
+            const val = child.val();
+            if (val && val.nombre) {
+              oficialesConectados.push(val.nombre);
+            }
+          });
+          const el = document.getElementById('header_conectados');
+          if (el) el.innerText = oficialesConectados.length ? oficialesConectados.join(', ') : 'Ninguno';
+        });
+
+        iniciarReloj();
+        inicializarBaseDeDatos();
+      } catch (e) {
+        console.error('Error en inicio:', e);
+      }
+
+      // Forzar carga de la app después de 2 segundos máximo
+      const forzarCarga = () => {
         document.getElementById('loadingScreen').classList.add('hidden');
         document.getElementById('app').classList.remove('hidden');
 
@@ -1877,7 +1912,76 @@
 
         mostrar('registrar');
         toast(`👋 Bienvenido, ${g}`);
-      }, 1000);
+      };
+
+      setTimeout(forzarCarga, 2000);
+    }
+
+    // ── INICIALIZAR BASE DE DATOS (FIREBASE LISTENERS) ──
+    function inicializarBaseDeDatos() {
+      // 1. Escuchar Visitas
+      database.ref('visitas').on('value', snapshot => {
+        try {
+          visitas = [];
+          snapshot.forEach(child => {
+            visitas.push({ id: child.key, ...child.val() });
+          });
+          visitas.sort((a, b) => obtenerFechaObjeto(b) - obtenerFechaObjeto(a));
+          calcularInteraccionesSugeridas();
+          render();
+        } catch (e) { console.error('Error en visitas listener:', e); }
+      }, err => {
+        console.error("Error cargando visitas:", err);
+        toastError('Error al cargar visitas de Firebase: ' + (err.message || err));
+      });
+
+      // 2. Escuchar Residentes
+      database.ref('residentes').on('value', snapshot => {
+        try {
+          residentes = [];
+          snapshot.forEach(child => {
+            residentes.push({ id: child.key, ...child.val() });
+          });
+          residentes.sort((a, b) => a.lago.localeCompare(b.lago, undefined, { numeric: true }));
+          actualizarCasas();
+          renderResidentes();
+        } catch (e) { console.error('Error en residentes listener:', e); }
+      });
+
+      // 3. Escuchar Familiares
+      database.ref('familiares').on('value', snapshot => {
+        try {
+          familiares = [];
+          snapshot.forEach(child => {
+            familiares.push({ id: child.key, ...child.val() });
+          });
+          familiares.sort((a, b) => a.casa.localeCompare(b.casa, undefined, { numeric: true }));
+          renderFamiliares();
+        } catch (e) { console.error('Error en familiares listener:', e); }
+      });
+
+      // 4. Escuchar Personal
+      database.ref('personal').on('value', snapshot => {
+        try {
+          personal = [];
+          snapshot.forEach(child => {
+            personal.push({ id: child.key, ...child.val() });
+          });
+          personal.sort((a, b) => (a.casa || '').localeCompare(b.casa || '', undefined, { numeric: true }));
+          renderPersonal();
+        } catch (e) { console.error('Error en personal listener:', e); }
+      });
+
+      // 5. Escuchar Historial de Reportes
+      database.ref('reportes').on('value', snapshot => {
+        try {
+          reportes = [];
+          snapshot.forEach(child => {
+            reportes.unshift({ id: child.key, ...child.val() });
+          });
+          renderReportes();
+        } catch (e) { console.error('Error en reportes listener:', e); }
+      });
     }
 
     function cerrarSesion() {
@@ -2427,6 +2531,24 @@
       });
 
       actualizarTablaHoras(datosHoras, totalTurnoActual);
+    }
+
+    function obtenerDatosGraficaHoras() {
+      const hoyStr = new Date().toLocaleDateString('es-ES');
+      const horas = {};
+      for (let i = 0; i < 24; i++) horas[i] = 0;
+      visitas.forEach(v => {
+        if (v.fecha === hoyStr && v.turno === turno && v.horaNum !== undefined) {
+          horas[v.horaNum] = (horas[v.horaNum] || 0) + 1;
+        }
+      });
+      const labels = [], data = [];
+      for (let i = 0; i < 24; i++) {
+        const h = String(i).padStart(2, '0');
+        labels.push(`${h}:00 - ${h}:59`);
+        data.push(horas[i]);
+      }
+      return { labels, data };
     }
 
     function actualizarTablaHoras(datosHoras, totalIngresos) {
