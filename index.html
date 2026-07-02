@@ -1979,6 +1979,24 @@
       });
     }
 
+    function mostrar(pestana) {
+      ['registrar', 'visitas', 'estadisticas', 'reportes', 'residentes', 'familiares', 'personal'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+        const b = document.getElementById('btn_' + id);
+        if (b) b.className = "nav-tab";
+      });
+      document.getElementById(pestana).classList.remove('hidden');
+      const b = document.getElementById('btn_' + pestana);
+      if (b) b.className = "nav-tab active";
+      if (pestana === 'registrar') actualizarCampos();
+      if (pestana === 'visitas') render();
+      if (pestana === 'estadisticas') render();
+      if (pestana === 'reportes') renderReportes();
+      if (pestana === 'residentes') renderResidentes();
+      if (pestana === 'familiares') { actualizarCasasFamiliares(); renderFamiliares(); }
+      if (pestana === 'personal') { selPersonalTipo('casa'); renderPersonal(); }
+    }
+
     function cerrarSesion() {
       if (presenceRef) {
         presenceRef.remove();
